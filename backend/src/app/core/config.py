@@ -60,6 +60,10 @@ class Settings:
     # ClinicalTrials.gov and Europe PMC are open — no key needed.
     COMTRADE_API_KEY: str = os.getenv("COMTRADE_API_KEY", "")
 
+    # Gemini LLM configuration for executive report generation
+    GEMINI_API_KEY: str   = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str     = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
     # ------------------------------------------------------------------ #
     # HTTP Client — Timeouts (seconds)
     # connect: time to establish a TCP connection
