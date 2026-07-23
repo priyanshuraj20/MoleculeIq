@@ -30,11 +30,17 @@ app.add_middleware(
 )
 
 
+from app.api import research_router
+
+# Include API Routers
+app.include_router(research_router)
+
+
 @app.get("/health", tags=["System Health"])
 async def health_check():
     """
     Health Check Endpoint.
-    
+
     Returns standard JSON status indicating that the backend server is online and operational.
     Used by load balancers, monitoring tools, and frontend connection checks.
     """
