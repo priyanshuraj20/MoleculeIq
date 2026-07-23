@@ -205,7 +205,7 @@ This file becomes your own build diary — extremely useful when someone asks "w
 | 1.1 — Skeleton Setup | ✅ Done (FastAPI + Uvicorn + Health Check) |
 | 1.2 — Frontend Bootstrap | ✅ Done (React + Vite + Tailwind + Axios + Backend Connectivity) |
 | 2 — Data Layer & Infra Clients | ✅ Done (Supabase DB + 3 API Clients: ClinicalTrials, EuropePMC, Comtrade) |
-| 3 — First Agent | ⬜ Not started |
+| 3 — Worker Agents (Clinical & Literature) | ✅ Done (ClinicalTrialsAgent + LiteratureAgent + 44/44 checks passed) |
 | 4 — Remaining Agents | ⬜ Not started |
 | 5 — Orchestration | ⬜ Not started |
 | 6 — Differentiators | ⬜ Not started |
