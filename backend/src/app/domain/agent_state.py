@@ -13,6 +13,7 @@ from typing import Optional, List
 
 from app.domain.clinical import ClinicalDomain
 from app.domain.literature import LiteratureDomain
+from app.domain.market import MarketInsightsDomain
 
 
 @dataclass
@@ -23,5 +24,6 @@ class AgentState:
     molecule_name:   str
     clinical_trials: Optional[ClinicalDomain] = None
     literature:      Optional[LiteratureDomain] = None
+    market:          Optional[MarketInsightsDomain] = None
     errors:          List[str] = field(default_factory=list)
     warnings:        List[str] = field(default_factory=list)
