@@ -38,7 +38,7 @@ class ClinicalDomain:
     trials:        List[ClinicalTrialRecord] = field(default_factory=list)
     total_found:   int = 0
     source:        str = "ClinicalTrials.gov API v2"
-    confidence:    float = 0.90  # API data is highly authoritative
+    confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
 
     @property
     def active_trials(self) -> List[ClinicalTrialRecord]:

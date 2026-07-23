@@ -42,7 +42,7 @@ class PatentLandscapeDomain:
     molecule_name: str
     patents:       list[PatentRecord] = field(default_factory=list)
     source:        str   = "Supabase / USPTO-EPO (mock)"
-    confidence:    float = 0.70  # mock data → medium confidence
+    confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
 
     @property
     def active_patents(self) -> list[PatentRecord]:

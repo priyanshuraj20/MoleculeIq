@@ -81,7 +81,6 @@ class ClinicalTrialsAgent:
                 trials=mapped_trials,
                 total_found=total_found,
                 source="ClinicalTrials.gov API v2",
-                confidence=0.90
             )
 
             state.clinical_trials = domain_model

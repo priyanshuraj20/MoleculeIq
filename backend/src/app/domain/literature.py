@@ -37,7 +37,7 @@ class LiteratureDomain:
     publications:  List[LiteratureRecord] = field(default_factory=list)
     total_found:   int = 0
     source:        str = "Europe PMC REST API"
-    confidence:    float = 0.85
+    confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
 
     @property
     def highly_cited_papers(self) -> List[LiteratureRecord]:

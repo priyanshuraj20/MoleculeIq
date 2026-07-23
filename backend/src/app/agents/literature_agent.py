@@ -81,7 +81,6 @@ class LiteratureAgent:
                 publications=mapped_pubs,
                 total_found=total_found,
                 source="Europe PMC REST API",
-                confidence=0.85
             )
 
             state.literature = domain_model

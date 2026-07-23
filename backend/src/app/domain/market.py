@@ -44,7 +44,7 @@ class MarketInsightsDomain:
     molecule_name: str
     data_points:   list[MarketDataPoint] = field(default_factory=list)
     source:        str   = "Supabase / IQVIA MIDAS (mock)"
-    confidence:    float = 0.75  # mock data → medium confidence
+    confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
 
     @property
     def global_market_size_usd_mn(self) -> Optional[float]:
