@@ -207,7 +207,7 @@ This file becomes your own build diary — extremely useful when someone asks "w
 | 2 — Data Layer & Infra Clients | ✅ Done (Supabase DB + 3 API Clients: ClinicalTrials, EuropePMC, Comtrade) |
 | 3 — Worker Agents (Clinical, Literature, Market, Patent) | ✅ Done (Clinical, Literature, Market, Patent Agents + 88/88 checks passed) |
 | 4 — Remaining Agents | ⬜ Not started |
-| 5 — Orchestration | ⬜ Not started |
+| 4 — Orchestration | ✅ Done (LangGraph StateGraph + 4-Node Sequential Execution + 18/18 checks passed) |
 | 6 — Differentiators | ⬜ Not started |
 | 7 — Reports | ⬜ Not started |
 | 8 — Frontend | ⬜ Not started |
