@@ -16,6 +16,7 @@ from app.domain.clinical import ClinicalDomain
 from app.domain.literature import LiteratureDomain
 from app.domain.market import MarketInsightsDomain
 from app.domain.patent import PatentLandscapeDomain
+from app.domain.opportunity_score import OpportunityScore
 
 
 @dataclass
@@ -51,6 +52,7 @@ class ResearchContext:
     market:           Optional[MarketInsightsDomain]  = None
     patent:           Optional[PatentLandscapeDomain]  = None
     metadata:         ResearchMetadata                = field(default_factory=ResearchMetadata)
+    score:            Optional[OpportunityScore]      = None
     created_at:       str                             = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     pipeline_version: str                             = "1.0.0"
     warnings:         List[str]                       = field(default_factory=list)
