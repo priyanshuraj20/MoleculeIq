@@ -213,6 +213,7 @@ This file becomes your own build diary — extremely useful when someone asks "w
 | 7 — FastAPI Research API | ✅ Done (POST /api/research endpoint + full pipeline orchestration + 18/18 checks passed) |
 | 8 — SSE Research Streaming | ✅ Done (GET /api/v1/research/stream endpoint + 12-event SSE stream + 18/18 checks passed) |
 | 9 — Executive Analysis Service | ✅ Done (ExecutiveReportService + ExecutiveReport 8-section synthesis + 22/22 checks passed) |
+| 10 — PDF Report Generation | ✅ Done (PDFReportService + ReportLab 9-section PDF report + 12/12 checks passed) |
 | 6 — Differentiators | ⬜ Not started |
 | 7 — Reports | ⬜ Not started |
 | 8 — Frontend | ⬜ Not started |
