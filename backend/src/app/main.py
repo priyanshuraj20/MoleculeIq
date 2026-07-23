@@ -30,10 +30,11 @@ app.add_middleware(
 )
 
 
-from app.api import research_router
+from app.api import research_router, stream_router
 
 # Include API Routers
 app.include_router(research_router)
+app.include_router(stream_router)
 
 
 @app.get("/health", tags=["System Health"])

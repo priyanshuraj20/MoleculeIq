@@ -211,6 +211,7 @@ This file becomes your own build diary — extremely useful when someone asks "w
 | 5 — Research Aggregation | ✅ Done (AggregationService + ResearchContext + ResearchMetadata + 24/24 checks passed) |
 | 6 — Opportunity Scoring | ✅ Done (ScoringService + OpportunityScore + ScoreBreakdown + 22/22 checks passed) |
 | 7 — FastAPI Research API | ✅ Done (POST /api/research endpoint + full pipeline orchestration + 18/18 checks passed) |
+| 8 — SSE Research Streaming | ✅ Done (GET /api/v1/research/stream endpoint + 12-event SSE stream + 18/18 checks passed) |
 | 6 — Differentiators | ⬜ Not started |
 | 7 — Reports | ⬜ Not started |
 | 8 — Frontend | ⬜ Not started |
