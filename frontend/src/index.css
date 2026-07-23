@@ -1,0 +1,13 @@
+/*
+ * Tailwind CSS v4 — single import replaces the old @tailwind base/components/utilities directives.
+ */
+@import "tailwindcss";
+
+/* Clean, human-crafted global body styling */
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+}
