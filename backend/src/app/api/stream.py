@@ -49,6 +49,16 @@ _agg_service      = AggregationService()
 _score_service    = ScoringService()
 
 
+def sse_json_serializer(obj):
+    """
+    JSON serializer helper for objects not serializable by default json.dumps
+    (e.g., datetime.date and datetime.datetime).
+    """
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} is not JSON serializable")
+
+
 def format_sse(event: str, data: dict) -> str:
     """
     Formats event name and JSON dictionary into standard SSE wire format.
@@ -56,7 +66,7 @@ def format_sse(event: str, data: dict) -> str:
       event: <event_name>\n
       data: <json_data>\n\n
     """
-    json_str = json.dumps(data, ensure_ascii=False)
+    json_str = json.dumps(data, default=sse_json_serializer, ensure_ascii=False)
     return f"event: {event}\ndata: {json_str}\n\n"
 
 
