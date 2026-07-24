@@ -8,6 +8,7 @@ import { LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -27,6 +28,8 @@ export default function Navbar() {
     await logout();
     navigate('/', { replace: true });
   };
+
+  const initialLetter = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
 
   return (
     <header
@@ -55,19 +58,21 @@ export default function Navbar() {
                 className="flex items-center gap-2 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-slate-200"
                 aria-label="User menu"
               >
-                {user?.picture ? (
+                {user?.picture && !imgError ? (
                   <img
                     src={user.picture}
                     alt={user.name || 'User'}
                     className="w-9 h-9 rounded-full object-cover border"
                     style={{ borderColor: 'var(--color-border)' }}
+                    onError={() => setImgError(true)}
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm"
                     style={{ backgroundColor: 'var(--color-blue)' }}
                   >
-                    {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />}
+                    {initialLetter}
                   </div>
                 )}
                 <span className="hidden sm:inline-block text-sm font-semibold max-w-[120px] truncate" style={{ color: 'var(--color-text)' }}>
@@ -84,19 +89,21 @@ export default function Navbar() {
                 >
                   {/* User Profile Card */}
                   <div className="flex items-center gap-3">
-                    {user?.picture ? (
+                    {user?.picture && !imgError ? (
                       <img
                         src={user.picture}
                         alt={user.name}
                         className="w-11 h-11 rounded-full object-cover border shrink-0"
                         style={{ borderColor: 'var(--color-border-light)' }}
+                        onError={() => setImgError(true)}
+                        referrerPolicy="no-referrer"
                       />
                     ) : (
                       <div
                         className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-base shrink-0"
                         style={{ backgroundColor: 'var(--color-blue)' }}
                       >
-                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        {initialLetter}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
