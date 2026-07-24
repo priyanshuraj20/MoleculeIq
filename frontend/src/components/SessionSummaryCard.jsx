@@ -64,7 +64,7 @@ export default function SessionSummaryCard({ context, processingTimeSec }) {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4" style={{ color: 'var(--color-navy-text)' }} />
           <span className="text-sm font-semibold text-white">
-            {processingTimeSec ? `${processingTimeSec.toFixed(2)}s` : '< 3.0s'}
+            {processingTimeSec != null ? `${processingTimeSec.toFixed(2)}s` : '—'}
           </span>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function SessionSummaryCard({ context, processingTimeSec }) {
           },
           {
             label: 'Confidence Signal',
-            value: `${context.score?.confidence_score?.toFixed(0) ?? 100}% Strong`,
+            value: context.score?.confidence_score != null ? `${context.score.confidence_score.toFixed(0)}%` : '—',
             valueColor: '#ffffff',
           },
         ].map((item, idx) => (

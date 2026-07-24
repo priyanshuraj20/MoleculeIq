@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MoleculeIQ - Metformin Research Report</title>
+<!-- Tailwind CSS with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config Verbatim -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#eceef0",
+                    "on-background": "#191c1e",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#dbe1ff",
+                    "inverse-surface": "#2d3133",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#bec6e0",
+                    "on-primary-container": "#7c839b",
+                    "on-surface-variant": "#45464d",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed-variant": "#003ea8",
+                    "inverse-primary": "#bec6e0",
+                    "primary": "#000000",
+                    "tertiary": "#000000",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#565e74",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "on-error-container": "#93000a",
+                    "surface": "#f7f9fb",
+                    "primary-container": "#131b2e",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "on-primary-fixed": "#131b2e",
+                    "secondary-container": "#316bf3",
+                    "on-secondary-container": "#fefcff",
+                    "outline-variant": "#c6c6cd",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "tertiary-fixed": "#89f5e7",
+                    "background": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#00201d",
+                    "outline": "#76777d",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "tertiary-container": "#00201d",
+                    "on-surface": "#191c1e",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-tertiary-container": "#0c9488",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary-fixed": "#00174b",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#dae2fd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "stack-sm": "8px",
+                    "base": "4px",
+                    "stack-lg": "32px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-xl-mobile": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-xl-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .active-tab {
+            @apply border-secondary-container text-on-surface !important;
+        }
+        /* Custom Elevation for Medical Modern Aesthetic */
+        .card-shadow {
+            box-shadow: 0px 4px 20px rgba(15, 23, 42, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-background min-h-screen flex">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-stack-lg z-40 bg-surface-container-low border-r border-outline-variant w-64 shadow-sm">
+<div class="px-6 mb-stack-lg">
+<div class="flex items-center gap-3">
+<img alt="MoleculeIQ Logo" class="w-10 h-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2GFpZzR3q7t89Y_nrU5jaUGr0l-dzyhXc9wNjYFJipiNjUCJLCf_U2ZfCRbRv9S_gqrAb-rZidWzdRYluW8lslQtNqQLWbiM2OYdZgcfw4hLxnuWA110jq-x4qXmt3lehcHE8vZrY0AE_XTpN7U9sTuZEtobAoP_HXYbeTBfSX39ZG1Soj1fa2YtM4sRCYDov_7W-eJaIszCkf1iyNFXiMDJF7Dou3-vr4yM7BD-Sjn1FrvPJa8TzvkdSOIMNqGjZwCV2biRT8OO4"/>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-secondary">MoleculeIQ</h1>
+<p class="text-body-sm font-body-sm text-outline">AI Pharma Intelligence</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-fixed text-on-secondary-fixed rounded-lg font-bold transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-label-md font-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+<span class="text-label-md font-label-md">Clinical</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="text-label-md font-label-md">Literature</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-label-md font-label-md">Market</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+<span class="text-label-md font-label-md">Patents</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="text-label-md font-label-md">Risk</span>
+</a>
+</nav>
+<div class="mt-auto px-4 space-y-4">
+<button class="w-full py-3 bg-secondary-container text-on-secondary-container rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="text-label-md font-label-md">New Analysis</span>
+</button>
+<div class="pt-4 border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-label-md font-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span class="text-label-md font-label-md">API Documentation</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col min-w-0">
+<!-- TopAppBar Anchor -->
+<header class="h-16 bg-surface border-b border-outline-variant flex items-center justify-between px-margin-desktop sticky top-0 z-30">
+<div class="flex items-center gap-gutter">
+<span class="text-headline-md font-headline-md font-black text-secondary">MoleculeIQ</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-secondary transition-colors text-body-md font-body-md" href="#">Dashboard</a>
+<a class="text-secondary border-b-2 border-secondary pb-1 text-body-md font-body-md" href="#">Research</a>
+<a class="text-on-surface-variant hover:text-secondary transition-colors text-body-md font-body-md" href="#">Library</a>
+<a class="text-on-surface-variant hover:text-secondary transition-colors text-body-md font-body-md" href="#">Agents</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors" data-icon="settings">settings</button>
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional scientist profile portrait in a minimalist digital avatar style, clean lighting, white medical background, high-end corporate pharma aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRYpJJy65X3f3JTRFVfOL13NKd2FPKyojjMDjCXx48ISPqVDzcFdcJ7KhVLuy_FW3aKgngo4HU5G3SYuiDHyPNrWLgVE2ozM1Rxqd2nrVY_15fhm9XlhY2-MFptqZH8gG0HWKlCrvmy7UfOpMJDkWQukEdfBucwuQ84bgM5hdkTB3IAjZXL_R-XAQ6pb05HQZWfW7sS05mMnyXDMGTStjjSgLeUJYj9iV7FfLmjqkAH8BVtn8Ifz2A3UKzD8ZHETkJTeYNinVlFYbp"/>
+</div>
+</div>
+</header>
+<!-- Sub-header Area -->
+<section class="px-margin-desktop py-stack-md flex flex-wrap items-end justify-between gap-gutter">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+<span class="text-label-sm font-label-sm uppercase tracking-wider">Back to Research Dashboard</span>
+</div>
+<h2 class="text-headline-xl font-headline-xl text-on-background">Metformin Executive Research Report</h2>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base" data-icon="schedule">schedule</span>
+<span class="text-body-sm font-body-sm">Last updated July 24, 2026, 2:38 PM</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed rounded-full">
+<span class="material-symbols-outlined text-xs" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-label-sm font-label-sm">High Reliability Report</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 pb-1">
+<button class="px-4 py-2 border border-outline-variant text-on-surface-variant rounded-lg font-label-md flex items-center gap-2 hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+                    Export JSON
+                </button>
+<button class="px-4 py-2 bg-secondary text-on-secondary rounded-lg font-label-md flex items-center gap-2 hover:opacity-90 transition-all shadow-sm active:scale-95">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                    Download PDF Report
+                </button>
+</div>
+</section>
+<!-- Metric Cards Row -->
+<section class="px-margin-desktop py-stack-md grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md card-shadow flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-label-sm font-label-sm text-outline uppercase">Target Molecule</span>
+<span class="material-symbols-outlined text-secondary" data-icon="science">science</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-secondary">Metformin</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md card-shadow flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-label-sm font-label-sm text-outline uppercase">Opportunity Score</span>
+<span class="material-symbols-outlined text-secondary" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<span class="text-headline-lg font-headline-lg text-on-background">38.5</span>
+<span class="text-body-sm font-body-sm text-outline">/ 100</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md card-shadow flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-label-sm font-label-sm text-outline uppercase">Data Confidence</span>
+<div class="w-8 h-8 rounded-full border-2 border-on-tertiary-container flex items-center justify-center">
+<span class="text-[10px] font-bold text-on-tertiary-container">60%</span>
+</div>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-tertiary-container">60% Strong</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md card-shadow flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="text-label-sm font-label-sm text-outline uppercase">Research Status</span>
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="check_circle">check_circle</span>
+</div>
+<div class="text-headline-lg font-headline-lg text-on-tertiary-container">Completed</div>
+</div>
+</section>
+<!-- Main Report Section with Tabbed Interface -->
+<section class="px-margin-desktop py-stack-md flex-1 mb-20">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl card-shadow overflow-hidden flex flex-col h-full">
+<!-- Tab Header -->
+<div class="flex border-b border-outline-variant bg-surface-container-low px-stack-md overflow-x-auto scrollbar-hide">
+<button class="tab-trigger flex items-center gap-2 px-6 py-4 text-label-md font-label-md text-on-surface-variant border-b-2 border-transparent transition-all active-tab" id="tab-summary" onclick="switchTab('summary')">
+<span class="material-symbols-outlined" data-icon="subject">subject</span>
+                        Summary
+                    </button>
+<button class="tab-trigger flex items-center gap-2 px-6 py-4 text-label-md font-label-md text-on-surface-variant border-b-2 border-transparent transition-all" id="tab-clinical" onclick="switchTab('clinical')">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span>
+                        Clinical
+                    </button>
+<button class="tab-trigger flex items-center gap-2 px-6 py-4 text-label-md font-label-md text-on-surface-variant border-b-2 border-transparent transition-all" id="tab-literature" onclick="switchTab('literature')">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                        Literature
+                    </button>
+<button class="tab-trigger flex items-center gap-2 px-6 py-4 text-label-md font-label-md text-on-surface-variant border-b-2 border-transparent transition-all" id="tab-market" onclick="switchTab('market')">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+                        Market
+                    </button>
+<button class="tab-trigger flex items-center gap-2 px-6 py-4 text-label-md font-label-md text-on-surface-variant border-b-2 border-transparent transition-all" id="tab-patents" onclick="switchTab('patents')">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+                        Patents
+                    </button>
+</div>
+<!-- Tab Content Containers -->
+<div class="flex-1 p-stack-lg overflow-y-auto">
+<!-- Summary Content -->
+<div class="tab-content space-y-stack-lg animate-in fade-in duration-300" id="content-summary">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-stack-lg">
+<div class="lg:col-span-2 space-y-stack-lg">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-background mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="description">description</span>
+                                        Executive Summary
+                                    </h3>
+<p class="text-body-lg font-body-lg text-on-surface-variant leading-relaxed">
+                                        Strategic Intelligence Summary for Metformin: Metformin presents an overall Commercial Opportunity Score of 38.5 / 100 with a Data Confidence rating of 60%. Analysis across available research domains identifies 0 total clinical trial(s), 2 scientific publication(s), and an FTO assessment of 'At Risk' — 3 active patent constraint(s). Research intelligence context was aggregated across 3 available domain datasets.
+                                    </p>
+</div>
+<div class="pt-stack-md">
+<h3 class="text-headline-md font-headline-md text-on-background mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="assignment">assignment</span>
+                                        Commercial Opportunity
+                                    </h3>
+<p class="text-body-md font-body-md text-on-surface-variant leading-relaxed">
+                                        Commercial Opportunity Evaluation: The global addressable market is estimated at $5.1B with a 5-year CAGR growth rate of 6.2%. Commercial footprint spans 4 key market regions (Global, United States, Europe, Asia Pacific). Commercial Opportunity Sub-Score: 90.0 / 100.
+                                    </p>
+</div>
+</div>
+<div class="space-y-stack-md">
+<div class="p-6 bg-surface-container-low rounded-xl border border-outline-variant">
+<h4 class="text-label-md font-label-md text-on-background mb-4">Domain Analysis Progress</h4>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span>Clinical Landscape</span>
+<span class="text-error font-bold">Incomplete</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="w-0 h-full bg-error"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span>Scientific Literature</span>
+<span class="text-on-tertiary-container font-bold">Verified</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-on-tertiary-container"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span>Market Intelligence</span>
+<span class="text-on-tertiary-container font-bold">Verified</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="w-full h-full bg-on-tertiary-container"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span>Patent Analysis</span>
+<span class="text-secondary font-bold">Flagged</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="w-1/2 h-full bg-secondary"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl text-center">
+<div class="w-12 h-12 bg-secondary-fixed rounded-full flex items-center justify-center mx-auto mb-3">
+<span class="material-symbols-outlined text-secondary" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h4 class="text-label-md font-label-md mb-2">AI Agent Insights</h4>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Metformin's market maturity is high, but FTO risks in emerging bio-similars suggest strategic repositioning.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Other Content (Placeholders) -->
+<div class="tab-content hidden h-64 flex items-center justify-center text-on-surface-variant" id="content-clinical">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="clinical_notes">clinical_notes</span>
+<p class="font-label-md">Detailed Clinical Landscape Data for Metformin</p>
+<p class="text-body-sm">Section under active refinement by AI Research Agents.</p>
+</div>
+</div>
+<div class="tab-content hidden h-64 flex items-center justify-center text-on-surface-variant" id="content-literature">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="book">book</span>
+<p class="font-label-md">2 Scientific Publications Indexed</p>
+<p class="text-body-sm">Bibliometric analysis and citation mapping available.</p>
+</div>
+</div>
+<div class="tab-content hidden h-64 flex items-center justify-center text-on-surface-variant" id="content-market">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="bar_chart">bar_chart</span>
+<p class="font-label-md">$5.1B Market Analysis Details</p>
+<p class="text-body-sm">Segmented by Global, US, EU, and APAC regions.</p>
+</div>
+</div>
+<div class="tab-content hidden h-64 flex items-center justify-center text-on-surface-variant" id="content-patents">
+<div class="text-center">
+<span class="material-symbols-outlined text-4xl mb-2" data-icon="history_edu">history_edu</span>
+<p class="font-label-md">3 Active Patent Constraints Identified</p>
+<p class="text-body-sm">Freedom to Operate (FTO) summary and expiration timeline.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Anchor -->
+<footer class="w-full py-stack-md flex justify-between items-center px-margin-desktop bg-surface-container-lowest border-t border-outline-variant">
+<span class="text-body-sm font-body-sm text-on-surface-variant">© 2024 MoleculeIQ AI. Institutional Grade Intelligence.</span>
+<div class="flex gap-6">
+<a class="text-body-sm font-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Privacy Policy</a>
+<a class="text-body-sm font-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Terms of Service</a>
+<a class="text-body-sm font-body-sm text-on-surface-variant hover:text-secondary transition-colors" href="#">Compliance</a>
+</div>
+</footer>
+</main>
+<script>
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            // Show selected content
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+
+            // Remove active style from all buttons
+            document.querySelectorAll('.tab-trigger').forEach(btn => {
+                btn.classList.remove('active-tab');
+            });
+            // Add active style to selected button
+            document.getElementById('tab-' + tabId).classList.add('active-tab');
+        }
+
+        // Micro-interaction: Active scaling for buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => button.style.transform = 'scale(0.98)');
+            button.addEventListener('mouseup', () => button.style.transform = 'scale(1)');
+            button.addEventListener('mouseleave', () => button.style.transform = 'scale(1)');
+        });
+    </script>
+</body></html>

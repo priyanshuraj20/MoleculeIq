@@ -28,7 +28,7 @@ export default function LandingPage() {
 
         {/* Center Logo — prominent and clear */}
         <div className="flex justify-center py-2">
-          <MoleculeIQLogo style={{ height: '115px', width: 'auto', display: 'block' }} />
+          <MoleculeIQLogo style={{ height: '100px', width: 'auto', display: 'block' }} />
         </div>
 
         {/* Heading */}

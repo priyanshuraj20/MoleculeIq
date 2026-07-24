@@ -186,7 +186,7 @@ function PipelineStep({ label, done, visible }) {
             color: 'var(--color-teal)',
           }}
         >
-          Done
+          Verified
         </span>
       )}
     </div>
@@ -268,7 +268,7 @@ export default function ResearchPage() {
         {/* ── Idle welcome state ───────────────────────────────────────────── */}
         {isIdle && (
           <div className="flex flex-col items-center justify-center text-center py-20 space-y-7">
-            <MoleculeIQLogo style={{ height: '110px', width: 'auto', display: 'block' }} />
+            <MoleculeIQLogo style={{ height: '135px', width: 'auto', display: 'block' }} />
             <div className="space-y-2 max-w-lg mx-auto">
               <h2
                 className="text-2xl font-semibold"

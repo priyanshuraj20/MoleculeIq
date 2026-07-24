@@ -9,13 +9,13 @@ export default function Navbar() {
       style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
     >
       <div
-        className="w-full flex items-center justify-between px-8 lg:px-12 py-3.5"
+        className="w-full flex items-center justify-between px-8 lg:px-12 py-3"
       >
 
         {/* ── Left: Cropped Brand Logo ──────────────────────────── */}
         <Link to="/" className="flex items-center gap-3 select-none shrink-0">
           <MoleculeIQLogo
-            style={{ height: '54px', width: 'auto', display: 'block' }}
+            style={{ height: '64px', width: 'auto', display: 'block' }}
           />
         </Link>
 
@@ -24,8 +24,8 @@ export default function Navbar() {
           <button
             type="button"
             style={{
-              height: '40px',
-              padding: '0 22px',
+              height: '42px',
+              padding: '0 24px',
               fontSize: '14px',
               fontWeight: 500,
               border: '1px solid var(--color-border)',
@@ -51,8 +51,8 @@ export default function Navbar() {
           <button
             type="button"
             style={{
-              height: '40px',
-              padding: '0 22px',
+              height: '42px',
+              padding: '0 24px',
               fontSize: '14px',
               fontWeight: 600,
               borderRadius: '6px',

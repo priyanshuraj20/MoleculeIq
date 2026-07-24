@@ -77,21 +77,26 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
           <div className="h-4 w-48 bg-gray-100 animate-pulse" style={{ borderRadius: '4px' }} />
         </div>
       ) : score ? (
-        <div className="flex items-end gap-5">
-          <div>
-            <p className="text-4xl font-semibold tracking-tight tabular-nums" style={{ color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
-              {score.overall_score.toFixed(1)}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-faint)' }}>Overall Score / 100</p>
+        <div className="space-y-1">
+          <div className="flex items-end gap-5">
+            <div>
+              <p className="text-4xl font-semibold tracking-tight tabular-nums" style={{ color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
+                {score.overall_score.toFixed(1)}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-faint)' }}>Overall Score / 100</p>
+            </div>
+            <div className="pb-1">
+              <span
+                className="inline-flex items-center px-2.5 py-1 text-xs font-semibold border"
+                style={{ backgroundColor: '#f0fdfb', borderColor: 'var(--color-teal-dim)', color: 'var(--color-teal)', borderRadius: '4px' }}
+              >
+                {score.confidence_score.toFixed(0)}% Confidence
+              </span>
+            </div>
           </div>
-          <div className="pb-1">
-            <span
-              className="inline-flex items-center px-2.5 py-1 text-xs font-semibold border"
-              style={{ backgroundColor: '#f0fdfb', borderColor: 'var(--color-teal-dim)', color: 'var(--color-teal)', borderRadius: '4px' }}
-            >
-              {score.confidence_score.toFixed(0)}% Confidence
-            </span>
-          </div>
+          <p className="text-[11px] pt-1" style={{ color: 'var(--color-text-faint)' }}>
+            Calculated from Clinical, Literature, Patent and Market evidence.
+          </p>
         </div>
       ) : (
         <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>

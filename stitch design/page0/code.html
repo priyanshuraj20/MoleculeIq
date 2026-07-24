@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MoleculeIQ | AI Pharma Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#eceef0",
+                    "on-background": "#191c1e",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#dbe1ff",
+                    "inverse-surface": "#2d3133",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#bec6e0",
+                    "on-primary-container": "#7c839b",
+                    "on-surface-variant": "#45464d",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed-variant": "#003ea8",
+                    "inverse-primary": "#bec6e0",
+                    "primary": "#000000",
+                    "tertiary": "#000000",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#565e74",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#005049",
+                    "on-error-container": "#93000a",
+                    "surface": "#f7f9fb",
+                    "primary-container": "#131b2e",
+                    "tertiary-fixed-dim": "#6bd8cb",
+                    "on-primary-fixed": "#131b2e",
+                    "secondary-container": "#316bf3",
+                    "on-secondary-container": "#fefcff",
+                    "outline-variant": "#c6c6cd",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "tertiary-fixed": "#89f5e7",
+                    "background": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#00201d",
+                    "outline": "#76777d",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "tertiary-container": "#00201d",
+                    "on-surface": "#191c1e",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container-low": "#f2f4f6",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "secondary": "#0051d5",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-tertiary-container": "#0c9488",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary-fixed": "#00174b",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#dae2fd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "stack-sm": "8px",
+                    "base": "4px",
+                    "stack-lg": "32px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-ring {
+            box-shadow: 0 0 0 2px #2563EB;
+        }
+        .soft-shadow {
+            box-shadow: 0px 4px 20px rgba(15, 23, 42, 0.05);
+        }
+        .bg-pattern {
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-secondary-fixed">
+<!-- Sidebar Navigation Shell -->
+<nav class="fixed left-0 top-0 h-full flex flex-col py-stack-lg z-40 bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant dark:border-outline shadow-sm w-64">
+<div class="px-6 mb-stack-lg">
+<div class="flex items-center gap-3">
+<img alt="MoleculeIQ Logo" class="w-10 h-10 rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2GFpZzR3q7t89Y_nrU5jaUGr0l-dzyhXc9wNjYFJipiNjUCJLCf_U2ZfCRbRv9S_gqrAb-rZidWzdRYluW8lslQtNqQLWbiM2OYdZgcfw4hLxnuWA110jq-x4qXmt3lehcHE8vZrY0AE_XTpN7U9sTuZEtobAoP_HXYbeTBfSX39ZG1Soj1fa2YtM4sRCYDov_7W-eJaIszCkf1iyNFXiMDJF7Dou3-vr4yM7BD-Sjn1FrvPJa8TzvkdSOIMNqGjZwCV2biRT8OO4"/>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-secondary dark:text-secondary-fixed">MoleculeIQ</h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant">AI Pharma Intelligence</p>
+</div>
+</div>
+</div>
+<div class="px-3 space-y-1 mb-auto">
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-fixed dark:bg-secondary-container text-on-secondary-fixed dark:text-on-secondary-container rounded-lg font-bold transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md font-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="text-label-md font-label-md">Clinical</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md font-label-md">Literature</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="text-label-md font-label-md">Market</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="text-label-md font-label-md">Patents</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md font-label-md">Risk</span>
+</a>
+</div>
+<div class="px-6 py-stack-md mt-stack-lg border-t border-outline-variant">
+<button class="w-full py-3 bg-secondary text-on-secondary font-label-md text-label-md rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Analysis
+            </button>
+</div>
+<div class="px-3 pt-4 border-t border-outline-variant/30 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-outline-variant hover:text-secondary text-body-sm font-body-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+                Help Center
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-outline-variant hover:text-secondary text-body-sm font-body-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">code</span>
+                API Documentation
+            </a>
+</div>
+</nav>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 left-64 h-16 bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline z-30 flex items-center justify-between px-margin-desktop">
+<div class="flex items-center space-x-gutter">
+<nav class="flex space-x-6">
+<a class="text-secondary dark:text-secondary-fixed border-b-2 border-secondary dark:border-secondary-fixed pb-1 font-body-md text-body-md" href="#">Dashboard</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-secondary transition-colors font-body-md text-body-md" href="#">Research</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-secondary transition-colors font-body-md text-body-md" href="#">Library</a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-secondary transition-colors font-body-md text-body-md" href="#">Agents</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">settings</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-3">
+<button class="text-body-sm font-label-md text-on-surface-variant hover:text-secondary px-3 py-1.5 border border-outline-variant rounded-lg">Download PDF</button>
+<button class="text-body-sm font-label-md bg-secondary text-on-secondary px-4 py-1.5 rounded-lg hover:brightness-110 active:scale-95 transition-all">Export JSON</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant ring-2 ring-surface">
+<img class="w-full h-full object-cover" data-alt="A professional scientist profile portrait with high-key studio lighting and a clinical background, wearing a clean white lab coat, representing expertise and institutional grade pharmaceutical research." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYhUFyjT_FC5s3VjSGT8AhI6A7XVadPvW8LpbRYQQgo-QdFAh-BAzvn7i6dwHV02ySsupnExwyVdaYHqmn6ZJn_T_DDyjIlszANotdpF_g-KpxqEmIRmg0vA-IoQQI4gD8GxwPR7Q_dwkrCETfmK61fCacWAV2_i90flCfYMnyUhdGfdmXC0ccsrDM9wsE-qh6gqBZOEc-_xozCakFrw7q6GTV_gIZ4-WS6JTzpiMNd9gxgZHZDA5uyvfLG9MPueNy4rzts_rtP0g7"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 pt-16 min-h-screen relative bg-pattern">
+<!-- Dashboard Content -->
+<section class="max-w-container-max mx-auto px-margin-desktop py-stack-lg flex flex-col items-center justify-center min-h-[calc(100vh-128px)]">
+<!-- Hero Header -->
+<div class="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="mb-8 inline-block p-4 bg-white rounded-2xl soft-shadow border border-outline-variant/30">
+<img alt="MoleculeIQ Logo" class="w-24 h-24" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2GFpZzR3q7t89Y_nrU5jaUGr0l-dzyhXc9wNjYFJipiNjUCJLCf_U2ZfCRbRv9S_gqrAb-rZidWzdRYluW8lslQtNqQLWbiM2OYdZgcfw4hLxnuWA110jq-x4qXmt3lehcHE8vZrY0AE_XTpN7U9sTuZEtobAoP_HXYbeTBfSX39ZG1Soj1fa2YtM4sRCYDov_7W-eJaIszCkf1iyNFXiMDJF7Dou3-vr4yM7BD-Sjn1FrvPJa8TzvkdSOIMNqGjZwCV2biRT8OO4"/>
+</div>
+<h2 class="text-headline-xl font-headline-xl text-on-background mb-4">Welcome to MoleculeIQ</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                    Discover drug repurposing opportunities powered by MoleculeIQ AI analyzing market data, clinical trials, patents, and scientific literature.
+                </p>
+</div>
+<!-- Central Search UI -->
+<div class="w-full max-w-3xl relative animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150">
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full h-16 pl-14 pr-16 bg-white border border-outline-variant rounded-2xl text-body-lg focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary soft-shadow transition-all group-hover:border-outline" placeholder="Ask about drug repurposing opportunities..." type="text"/>
+<div class="absolute inset-y-0 right-4 flex items-center">
+<button class="bg-secondary/10 text-secondary p-2.5 rounded-xl hover:bg-secondary hover:text-white transition-all flex items-center">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+<!-- Recent Chips -->
+<div class="mt-6 flex flex-wrap justify-center items-center gap-3">
+<span class="text-label-sm font-label-md text-on-surface-variant mr-1">Try:</span>
+<button class="px-4 py-1.5 bg-white border border-outline-variant rounded-full text-label-md font-body-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">Metformin</button>
+<button class="px-4 py-1.5 bg-white border border-outline-variant rounded-full text-label-md font-body-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">Ibuprofen</button>
+<button class="px-4 py-1.5 bg-white border border-outline-variant rounded-full text-label-md font-body-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">Pembrolizumab</button>
+<button class="px-4 py-1.5 bg-white border border-outline-variant rounded-full text-label-md font-body-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">Semaglutide</button>
+</div>
+</div>
+<!-- Activity Indicator -->
+<div class="mt-24 flex items-center gap-4 px-6 py-3 bg-white border border-outline-variant/40 rounded-full soft-shadow animate-pulse">
+<div class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-sm font-label-md text-secondary uppercase tracking-wider">Research Agent Active</span>
+<span class="text-[10px] text-outline leading-none">Synthesizing 4.2M clinical records...</span>
+</div>
+</div>
+</section>
+<!-- Insights Bento Grid (Asymmetric Layout) -->
+<section class="max-w-container-max mx-auto px-margin-desktop py-stack-lg mb-20">
+<div class="grid grid-cols-12 gap-gutter">
+<div class="col-span-8 bg-white border border-outline-variant rounded-xl p-8 soft-shadow relative overflow-hidden group">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-background">Market Synthesis</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Global pharmaceutical trends 2024</p>
+</div>
+<span class="material-symbols-outlined text-secondary opacity-30 group-hover:opacity-100 transition-opacity">trending_up</span>
+</div>
+<div class="h-48 w-full bg-surface-container rounded-lg border border-dashed border-outline-variant flex items-center justify-center">
+<span class="text-label-md text-outline">Interactive Market Map Visualizing...</span>
+</div>
+</div>
+<div class="col-span-4 bg-secondary-container text-on-secondary-container rounded-xl p-8 soft-shadow flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-[40px] mb-4">clinical_notes</span>
+<h3 class="text-headline-md font-headline-md font-bold mb-2">Protocol Drafts</h3>
+<p class="text-body-sm opacity-80">AI-generated trial protocols ready for review and ethical submission.</p>
+</div>
+<button class="mt-6 w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-lg font-label-md transition-all">
+                        Resume Drafts
+                    </button>
+</div>
+<div class="col-span-4 bg-white border border-outline-variant rounded-xl p-8 soft-shadow">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container">history</span>
+</div>
+<h4 class="text-label-md font-bold">Recent Literature</h4>
+</div>
+<ul class="space-y-4">
+<li class="border-b border-outline-variant pb-2 last:border-0">
+<p class="text-body-sm font-medium text-on-background">Anti-inflammatory effects of statins...</p>
+<span class="text-[12px] text-outline">JAMA · 2 hours ago</span>
+</li>
+<li class="border-b border-outline-variant pb-2 last:border-0">
+<p class="text-body-sm font-medium text-on-background">Repurposing Metformin in Oncology</p>
+<span class="text-[12px] text-outline">Nature Medicine · Yesterday</span>
+</li>
+</ul>
+</div>
+<div class="col-span-8 bg-white border border-outline-variant rounded-xl p-8 soft-shadow flex items-center justify-between">
+<div class="flex-1 pr-12">
+<h4 class="text-headline-md font-headline-md mb-2">Library Status</h4>
+<p class="text-body-sm text-on-surface-variant mb-4">Your institutional library is synchronized with the latest FDA and EMA database updates.</p>
+<div class="flex gap-4">
+<div class="text-center">
+<p class="text-headline-lg font-bold text-secondary">2.4k</p>
+<p class="text-[10px] text-outline uppercase font-bold">Journals</p>
+</div>
+<div class="w-[1px] bg-outline-variant h-full"></div>
+<div class="text-center">
+<p class="text-headline-lg font-bold text-secondary">85</p>
+<p class="text-[10px] text-outline uppercase font-bold">Live Trials</p>
+</div>
+</div>
+</div>
+<div class="w-1/3 h-full">
+<div class="w-full h-32 bg-cover rounded-lg border border-outline-variant" data-alt="A macro-photographic visual showing crystalline molecular structures with soft bokeh lighting and professional medical teal accents. The aesthetic is clean, scientific, and represents high-grade laboratory data visualization for pharmaceutical intelligence." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD7KkrEW_UV0sZeep5ZEW46cX7BZ_yxwj2BCOTJpldZQu7242gY5DvuXxeVT4d4G8PG3vu_964HhcWubYAN3dQB8zIB9E3q8qLjuDN2zJi9LfjqmwJNkcPjvgh-Fy9jR2_TW2uqjUlHfSozU8HQUPDRXhDBVPaiqUdDD70HZKLIOz-olLGNC6clp4631NUuwE6Aqrtvn_9_9sKi9XBhpXmMe6TkIX8mMzB2U8XqwAla7aiJgGt5A4COcOptgJ9dVrdG1aCKkKptobLZ')"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="ml-64 border-t border-outline-variant dark:border-outline bg-surface-container-lowest dark:bg-inverse-surface">
+<div class="w-full py-stack-md flex justify-between items-center px-margin-desktop max-w-container-max mx-auto">
+<span class="text-body-sm font-body-sm text-on-surface-variant dark:text-surface-variant">
+                © 2024 MoleculeIQ AI. Institutional Grade Intelligence.
+            </span>
+<div class="flex gap-6">
+<a class="text-body-sm font-body-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Privacy Policy</a>
+<a class="text-body-sm font-body-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Terms of Service</a>
+<a class="text-body-sm font-body-sm text-on-surface-variant dark:text-surface-variant hover:text-secondary dark:hover:text-secondary-fixed transition-colors" href="#">Compliance</a>
+</div>
+</div>
+</footer>
+<!-- Floating Action Button Contextual -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="group flex items-center gap-2 bg-secondary text-on-secondary px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-md text-label-md">Ask Agent</span>
+</button>
+</div>
+<script>
+        // Simple Micro-interaction for Search Focus
+        const searchInput = document.querySelector('input');
+        const searchContainer = searchInput?.parentElement;
+
+        searchInput?.addEventListener('focus', () => {
+            searchContainer.classList.add('active-ring');
+        });
+
+        searchInput?.addEventListener('blur', () => {
+            searchContainer.classList.remove('active-ring');
+        });
+
+        // Atmospheric parallax effect for background
+        document.addEventListener('mousemove', (e) => {
+            const pattern = document.querySelector('.bg-pattern');
+            if (pattern) {
+                const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
+                const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
+                pattern.style.backgroundPosition = `${moveX}px ${moveY}px`;
+            }
+        });
+    </script>
+</body></html>
