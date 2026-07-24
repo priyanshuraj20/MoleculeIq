@@ -23,6 +23,7 @@ class AgentState:
     Shared state container passed between orchestrator nodes and worker agents.
     """
     molecule_name:   str
+    synonyms:        List[str] = field(default_factory=list)
     clinical_trials: Optional[ClinicalDomain] = None
     literature:      Optional[LiteratureDomain] = None
     market:          Optional[MarketInsightsDomain] = None

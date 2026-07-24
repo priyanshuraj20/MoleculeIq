@@ -61,20 +61,70 @@ class ResearchRequest(BaseModel):
         "aggregates domain context, and computes an overall commercial OpportunityScore."
     )
 )
+class ComparisonRequest(BaseModel):
+    molecule_a: str = Field(..., description="First compound name (e.g. 'Metformin').")
+    molecule_b: str = Field(..., description="Second compound name (e.g. 'Semaglutide').")
+
+
+from app.services.cache_service import CacheService
+
+_cache_service = CacheService()
+
+
+@router.post(
+    "/research",
+    status_code=status.HTTP_200_OK,
+    summary="Execute Multi-Agent Research Pipeline",
+    description="Executes full research pipeline for single molecule or auto-detects ' vs ' comparison queries."
+)
 async def execute_research_pipeline(payload: ResearchRequest):
     """
     FastAPI endpoint executing research pipeline, aggregation, and scoring.
+    Checks Redis cache first. On miss, runs LangGraph and saves report to Redis.
     """
-    molecule_name = payload.molecule_name
+    query_name = payload.molecule_name
     start_time = time.monotonic()
-    logger.info("[API: POST /api/research] Request received for molecule '%s'", molecule_name)
+    logger.info("[API: POST /api/research] Request received for '%s'", query_name)
+
+    # 1. Check Upstash Redis Cache
+    try:
+        cached_res = await _cache_service.get_report(query_name)
+        if cached_res:
+            logger.info("[API: POST /api/research] CACHE HIT for '%s' (served in 0.005s)", query_name)
+            return cached_res
+    except Exception as exc:
+        logger.warning("[API: POST /api/research] Cache check error (bypassing cache): %s", str(exc))
+
+    # 2. Check for comparison query (e.g., "Metformin vs Semaglutide")
+    lower_q = query_name.lower()
+    if " vs " in lower_q or " vs. " in lower_q:
+        parts = lower_q.replace(" vs. ", " vs ").split(" vs ")
+        if len(parts) == 2 and parts[0].strip() and parts[1].strip():
+            from app.services.comparison_service import ComparisonService
+            comp_service = ComparisonService()
+            comp_report = await comp_service.compare(parts[0].strip(), parts[1].strip())
+            res_dict = {
+                "mode": "comparison",
+                "data": dataclasses.asdict(comp_report)
+            }
+            # Save to Redis (dynamic TTL from settings.REDIS_TTL_SECONDS)
+            await _cache_service.set_report(query_name, res_dict)
+            return res_dict
 
     try:
         # Step 1: Run LangGraph multi-agent research pipeline
-        agent_state = await run_research_pipeline(molecule_name)
+        agent_state = await run_research_pipeline(query_name)
 
         # Step 2: Build normalized ResearchContext via AggregationService
         research_context = _agg_service.build_context(agent_state)
+
+        # Step 2.5: Check for meaningful evidence
+        if not research_context.has_meaningful_evidence:
+            logger.warning("[API: POST /api/research] No evidence found for molecule '%s'", query_name)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No research data or evidence found for molecule '{query_name}'. Please verify the spelling or search for an active pharmaceutical compound."
+            )
 
         # Step 3: Compute OpportunityScore & attach via ScoringService
         scored_context = _score_service.evaluate_and_attach(research_context)
@@ -82,28 +132,81 @@ async def execute_research_pipeline(payload: ResearchRequest):
         elapsed = round(time.monotonic() - start_time, 2)
         logger.info(
             "[API: POST /api/research] Completed for '%s' in %.2fs (Overall Score: %s)",
-            molecule_name,
+            query_name,
             elapsed,
             scored_context.score.overall_score if scored_context.score else "N/A"
         )
 
-        # Convert dataclass structure to JSON-serializable dictionary
-        return dataclasses.asdict(scored_context)
+        res_dict = dataclasses.asdict(scored_context)
+        res_dict["mode"] = "single"
+        res_dict["processing_time_sec"] = elapsed
+
+        # 3. Store result in Redis (dynamic TTL from settings.REDIS_TTL_SECONDS)
+        await _cache_service.set_report(query_name, res_dict)
+
+        return res_dict
 
     except HTTPException:
-        # Re-raise HTTPExceptions raised by validation or middleware
         raise
     except Exception as exc:
         elapsed = round(time.monotonic() - start_time, 2)
         logger.error(
             "[API: POST /api/research] Internal error for '%s' after %.2fs: %s",
-            molecule_name, elapsed, str(exc), exc_info=True
+            query_name, elapsed, str(exc), exc_info=True
         )
-        # Never expose raw python stack traces to API clients
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected internal error occurred while researching molecule '{molecule_name}'."
+            detail=f"An unexpected internal error occurred while researching molecule '{query_name}'."
         )
+
+
+@router.post(
+    "/research/compare",
+    status_code=status.HTTP_200_OK,
+    summary="Execute Parallel Molecule Comparison",
+    description="Runs parallel research for two molecules and synthesizes side-by-side domain comparison matrix."
+)
+async def execute_molecule_comparison(payload: ComparisonRequest):
+    """
+    Dedicated endpoint for comparing two molecules side-by-side.
+    """
+    from app.services.comparison_service import ComparisonService
+    comp_service = ComparisonService()
+    comp_report = await comp_service.compare(payload.molecule_a, payload.molecule_b)
+    return {
+        "mode": "comparison",
+        "data": dataclasses.asdict(comp_report)
+    }
+
+
+@router.post(
+    "/research/json",
+    status_code=status.HTTP_200_OK,
+    summary="Generate Downloadable JSON Research Report",
+    description="Returns standardized downstream API JSON report with processing metadata and citations."
+)
+async def export_research_json(payload: ResearchRequest):
+    """
+    FastAPI endpoint returning structured JSON report export.
+    """
+    from app.services.json_service import JSONReportService
+    start_time = time.monotonic()
+    query_name = payload.molecule_name
+
+    agent_state = await run_research_pipeline(query_name)
+    research_context = _agg_service.build_context(agent_state)
+
+    if not research_context.has_meaningful_evidence:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No research evidence found for molecule '{query_name}'."
+        )
+
+    scored_context = _score_service.evaluate_and_attach(research_context)
+    elapsed = round(time.monotonic() - start_time, 2)
+
+    json_service = JSONReportService()
+    return json_service.generate(scored_context, query_input=query_name, processing_time_sec=elapsed)
 
 
 @router.get(
@@ -143,6 +246,14 @@ async def download_research_pdf(
 
         # Step 2: Aggregate context
         context = _agg_service.build_context(agent_state)
+
+        # Step 2.5: Check for meaningful evidence
+        if not context.has_meaningful_evidence:
+            logger.warning("[API: GET /api/research/pdf] No evidence found for molecule '%s'", cleaned_name)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No research evidence found for molecule '{cleaned_name}'. PDF report cannot be generated."
+            )
 
         # Step 3: Compute opportunity score
         scored_context = _score_service.evaluate_and_attach(context)

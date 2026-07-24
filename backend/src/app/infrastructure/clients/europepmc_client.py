@@ -97,8 +97,9 @@ class EuropePMCClient(BaseAPIClient):
         """
         url = f"{settings.EUROPEPMC_BASE_URL}/search"
 
-        # Scope the search to MeSH drug substance + exclude preprints for quality
-        query = f"{molecule_name} AND (SRC:MED OR SRC:PMC)"
+        # Scope the search to exact compound name + Medline/PMC sources for precision
+        clean_name = molecule_name.strip().strip('"')
+        query = f'"{clean_name}" AND (SRC:MED OR SRC:PMC)'
 
         params = {
             "query":      query,

@@ -65,6 +65,8 @@ class PatentLandscapeDomain:
         High-level FTO assessment string for use in the report.
         Example: "At Risk — 3 active constraint(s)"
         """
+        if self.is_empty:
+            return "No patent data available"
         at_risk = self.at_risk_patents
         if not at_risk:
             return "Free to Operate — no active blocking patents found"

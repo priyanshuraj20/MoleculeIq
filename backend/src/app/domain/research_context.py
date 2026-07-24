@@ -39,6 +39,26 @@ class ResearchMetadata:
     fto_summary:                str             = "No patent data available"
     domains_available:          List[str]       = field(default_factory=list)
 
+    @property
+    def has_meaningful_evidence(self) -> bool:
+        """
+        Returns True if at least one domain contains validated pharmaceutical evidence:
+        - Commercial market sales data present, OR
+        - Patent landscape records present, OR
+        - Active recruiting trials present (active_trials_count > 0), OR
+        - Multi-study clinical pipeline present (total_trials >= 2), OR
+        - Substantial scientific publication volume (total_publications >= 5).
+        """
+        if not self.domains_available:
+            return False
+
+        has_market = self.global_market_size_usd_mn is not None
+        has_patents = self.patent_count > 0
+        has_clinical = (self.active_trials_count > 0) or (self.total_trials >= 2)
+        has_literature = self.total_publications >= 5
+
+        return has_market or has_patents or has_clinical or has_literature
+
 
 @dataclass
 class ResearchContext:
@@ -57,3 +77,9 @@ class ResearchContext:
     pipeline_version: str                             = "1.0.0"
     warnings:         List[str]                       = field(default_factory=list)
     errors:           List[str]                       = field(default_factory=list)
+
+    @property
+    def has_meaningful_evidence(self) -> bool:
+        """Convenience accessor to check if aggregated context has meaningful evidence."""
+        return self.metadata.has_meaningful_evidence
+

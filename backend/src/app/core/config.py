@@ -32,6 +32,13 @@ class Settings:
         if origin.strip()
     ]
 
+    # Upstash Redis Configuration
+    REDIS_URL: str = os.getenv(
+        "REDIS_URL",
+        "rediss://default:gQAAAAAAAraeAAIgcDI4ZmZlYzVjM2JhNWY0MWNjYThiNTk0YWE5MmY2Njc4Yw@topical-kodiak-177822.upstash.io:6379"
+    )
+    REDIS_TTL_SECONDS: int = int(os.getenv("REDIS_TTL_SECONDS", 86400))  # 24 hours
+
     # Supabase credentials (mock market + patent datasets)
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")

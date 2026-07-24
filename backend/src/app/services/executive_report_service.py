@@ -71,6 +71,10 @@ class ExecutiveReportService:
         logger.info("[ExecutiveReportService] Report generation requested for '%s'", molecule_name)
         start_time = time.monotonic()
 
+        if not context.has_meaningful_evidence:
+            logger.warning("[ExecutiveReportService] Skipping report generation for '%s': No meaningful evidence found.", molecule_name)
+            raise ValueError(f"No research data or evidence found for molecule '{molecule_name}'. Executive report cannot be generated.")
+
         # 1. Attempt LLM generation if API key is provided
         if self._api_key:
             try:

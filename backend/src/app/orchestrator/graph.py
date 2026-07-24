@@ -13,11 +13,13 @@ import time
 
 from app.domain.agent_state import AgentState
 from app.orchestrator.builder import build_research_graph
+from app.services.synonym_service import SynonymResolver
 
 logger = logging.getLogger(__name__)
 
 # Single compiled graph instance shared across API requests
 research_graph = build_research_graph()
+_synonym_resolver = SynonymResolver()
 
 
 async def run_research_pipeline(molecule_name: str) -> AgentState:
@@ -33,10 +35,17 @@ async def run_research_pipeline(molecule_name: str) -> AgentState:
     logger.info("[ResearchPipeline] Starting pipeline for molecule '%s'", molecule_name)
     start_time = time.monotonic()
 
-    # 1. Construct initial input state
-    initial_state = AgentState(molecule_name=molecule_name)
+    # 1. Resolve canonical name & synonyms
+    syn_result = _synonym_resolver.resolve(molecule_name)
+    canonical = syn_result.canonical_name or molecule_name
 
-    # 2. Invoke compiled LangGraph asynchronously
+    # 2. Construct initial input state
+    initial_state = AgentState(
+        molecule_name=canonical,
+        synonyms=list(syn_result.synonyms),
+    )
+
+    # 3. Invoke compiled LangGraph asynchronously
     final_state_dict_or_obj = await research_graph.ainvoke(initial_state)
 
     elapsed = round(time.monotonic() - start_time, 2)

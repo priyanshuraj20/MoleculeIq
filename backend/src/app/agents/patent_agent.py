@@ -50,7 +50,8 @@ class PatentAgent:
 
         try:
             # 1. Fetch patent data from repository
-            patent_domain = self._repo.get_by_molecule(molecule_name)
+            synonyms = getattr(state, "synonyms", None)
+            patent_domain = self._repo.get_by_molecule(molecule_name, synonyms=synonyms)
             elapsed = round(time.monotonic() - start_time, 2)
 
             # 2. Check if repository returned empty result

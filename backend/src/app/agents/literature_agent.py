@@ -67,13 +67,15 @@ class LiteratureAgent:
 
             # 3. Map raw JSON results into domain objects
             results_json = raw_response.get("resultList", {}).get("result", [])
-            total_found = raw_response.get("hitCount", len(results_json))
 
+            synonyms = getattr(state, "synonyms", [])
             mapped_pubs = []
             for item in results_json:
-                record = self._map_publication(item)
+                record = self._map_publication(item, molecule_name, synonyms)
                 if record:
                     mapped_pubs.append(record)
+
+            total_found = len(mapped_pubs) if mapped_pubs else 0
 
             # 4. Construct LiteratureDomain model
             domain_model = LiteratureDomain(
@@ -102,12 +104,28 @@ class LiteratureAgent:
     # Helper mapping functions
     # ------------------------------------------------------------------ #
 
-    def _map_publication(self, item: dict) -> Optional[LiteratureRecord]:
+    def _map_publication(self, item: dict, molecule_name: str = "", synonyms: list[str] | None = None) -> Optional[LiteratureRecord]:
         """
         Safely extracts fields from a Europe PMC publication JSON dictionary.
         """
         try:
             title = item.get("title", "Untitled Publication").rstrip(".")
+            abstract = item.get("abstractText")
+
+            # Validate relevance: publication title or abstract must contain target molecule name or synonyms
+            valid_targets = [molecule_name.lower().strip()] if molecule_name else []
+            if synonyms:
+                for s in synonyms:
+                    ls = s.lower().strip()
+                    if ls and ls not in valid_targets:
+                        valid_targets.append(ls)
+
+            if valid_targets:
+                t_lower = title.lower()
+                a_lower = (abstract or "").lower()
+                matched = any(target in t_lower or target in a_lower for target in valid_targets)
+                if not matched:
+                    return None
             pmid = item.get("pmid")
             doi = item.get("doi")
             authors = item.get("authorString", "Unknown Authors")

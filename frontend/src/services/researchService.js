@@ -110,3 +110,51 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
 
   return es;
 }
+
+/**
+ * Downloads standardized JSON report export.
+ */
+export async function downloadJsonReport(moleculeName) {
+  const url = `${API_CONFIG.baseURL}/api/research/json`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ molecule_name: moleculeName }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server returned HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `${moleculeName.replace(/\s+/g, '_')}_Research_Report.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(downloadUrl);
+}
+
+/**
+ * Downloads C-suite Executive PDF Report.
+ */
+export async function downloadPdfReport(moleculeName) {
+  const url = `${API_CONFIG.baseURL}/api/research/pdf?molecule_name=${encodeURIComponent(moleculeName)}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Server returned HTTP ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `${moleculeName.replace(/\s+/g, '_')}_Executive_Report.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(downloadUrl);
+}

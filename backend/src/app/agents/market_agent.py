@@ -50,7 +50,8 @@ class MarketAgent:
 
         try:
             # 1. Fetch market data from repository
-            market_domain = self._repo.get_by_molecule(molecule_name)
+            synonyms = getattr(state, "synonyms", None)
+            market_domain = self._repo.get_by_molecule(molecule_name, synonyms=synonyms)
             elapsed = round(time.monotonic() - start_time, 2)
 
             # 2. Check if repository returned empty result

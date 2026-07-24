@@ -70,6 +70,10 @@ def format_sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json_str}\n\n"
 
 
+from app.services.synonym_service import SynonymResolver
+
+_synonym_resolver = SynonymResolver()
+
 async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, None]:
     """
     Async generator yielding real-time SSE progress events while running
@@ -78,56 +82,68 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
     start_time = time.monotonic()
     logger.info("[SSE Stream] Commencing stream for molecule '%s'", molecule_name)
 
-    state = AgentState(molecule_name=molecule_name)
+    syn_result = _synonym_resolver.resolve(molecule_name)
+    canonical = syn_result.canonical_name or molecule_name
+
+    state = AgentState(
+        molecule_name=canonical,
+        synonyms=list(syn_result.synonyms),
+    )
 
     try:
         # Event 1: research_started
         yield format_sse("research_started", {
-            "molecule_name": molecule_name,
+            "molecule_name": canonical,
+            "query_name": molecule_name,
             "status": "started",
+            "message": f"Finding molecule '{canonical}' & resolving synonyms...",
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         })
 
         # Step 1: Clinical Trials Agent
-        yield format_sse("clinical_started", {"step": "clinical", "status": "in_progress"})
+        yield format_sse("clinical_started", {"step": "clinical", "status": "in_progress", "message": "Searching clinical databases..."})
         state = await _clinical_agent.execute(state)
         trials_count = len(state.clinical_trials.trials) if state.clinical_trials else 0
         yield format_sse("clinical_completed", {
             "step": "clinical",
             "status": "completed",
+            "message": f"Clinical analysis complete ({trials_count} trials mapped)",
             "trials_found": trials_count,
             "total_found": state.clinical_trials.total_found if state.clinical_trials else 0
         })
 
         # Step 2: Scientific Literature Agent
-        yield format_sse("literature_started", {"step": "literature", "status": "in_progress"})
+        yield format_sse("literature_started", {"step": "literature", "status": "in_progress", "message": "Collecting scientific literature..."})
         state = await _literature_agent.execute(state)
         pubs_count = len(state.literature.publications) if state.literature else 0
         yield format_sse("literature_completed", {
             "step": "literature",
             "status": "completed",
+            "message": f"Literature analysis complete ({pubs_count} papers mapped)",
             "papers_found": pubs_count,
             "total_found": state.literature.total_found if state.literature else 0
         })
 
         # Step 3: Market Insights Agent
-        yield format_sse("market_started", {"step": "market", "status": "in_progress"})
+        yield format_sse("market_started", {"step": "market", "status": "in_progress", "message": "Analyzing market intelligence..."})
         state = _market_agent.execute(state)
         points_count = len(state.market.data_points) if state.market else 0
         yield format_sse("market_completed", {
             "step": "market",
             "status": "completed",
+            "message": "Market analysis complete",
             "points_found": points_count,
             "global_size_usd_mn": state.market.global_market_size_usd_mn if state.market else None
         })
 
         # Step 4: Patent Landscape Agent
-        yield format_sse("patent_started", {"step": "patent", "status": "in_progress"})
+        yield format_sse("patent_started", {"step": "patent", "status": "in_progress", "message": "Searching patent databases..."})
         state = _patent_agent.execute(state)
         patents_count = len(state.patent.patents) if state.patent else 0
         yield format_sse("patent_completed", {
             "step": "patent",
             "status": "completed",
+            "message": f"Patent analysis complete ({patents_count} patents mapped)",
             "records_found": patents_count,
             "fto_summary": state.patent.fto_summary if state.patent else "N/A"
         })
@@ -139,6 +155,18 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
             "status": "completed",
             "domains_available": context.metadata.domains_available
         })
+
+        # Step 5.5: Validate meaningful evidence existence
+        if not context.has_meaningful_evidence:
+            err_msg = f"No research data or evidence found for molecule '{molecule_name}'. Please verify the spelling or search for an active pharmaceutical compound."
+            logger.warning("[SSE Stream] Terminating stream for '%s': %s", molecule_name, err_msg)
+            yield format_sse("research_failed", {
+                "molecule_name": molecule_name,
+                "status": "failed",
+                "error": err_msg,
+                "execution_time_seconds": round(time.monotonic() - start_time, 2)
+            })
+            return
 
         # Step 6: Hybrid Opportunity Scoring Service
         scored_context = _score_service.evaluate_and_attach(context)

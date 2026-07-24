@@ -69,11 +69,14 @@ class ClinicalTrialsAgent:
             studies_json = raw_response.get("studies", [])
             total_found = raw_response.get("totalCount", len(studies_json))
 
+            synonyms = getattr(state, "synonyms", [])
             mapped_trials = []
             for study in studies_json:
-                record = self._map_study(study)
+                record = self._map_study(study, molecule_name, synonyms)
                 if record:
                     mapped_trials.append(record)
+
+            total_found = len(mapped_trials) if mapped_trials else 0
 
             # 4. Construct ClinicalDomain model
             domain_model = ClinicalDomain(
@@ -102,7 +105,7 @@ class ClinicalTrialsAgent:
     # Helper mapping functions
     # ------------------------------------------------------------------ #
 
-    def _map_study(self, study_dict: dict) -> Optional[ClinicalTrialRecord]:
+    def _map_study(self, study_dict: dict, molecule_name: str = "", synonyms: list[str] | None = None) -> Optional[ClinicalTrialRecord]:
         """
         Safely extracts fields from a ClinicalTrials.gov v2 study dictionary.
         """
@@ -112,7 +115,29 @@ class ClinicalTrialsAgent:
             # Identification
             ident = protocol.get("identificationModule", {})
             nct_id = ident.get("nctId", "UNKNOWN")
-            title = ident.get("briefTitle") or ident.get("officialTitle") or "Untitled Study"
+            brief_title = ident.get("briefTitle", "")
+            official_title = ident.get("officialTitle", "")
+            title = brief_title or official_title or "Untitled Study"
+
+            # Relevance validation: study must reference target molecule_name or synonyms
+            valid_targets = [molecule_name.lower().strip()] if molecule_name else []
+            if synonyms:
+                for s in synonyms:
+                    ls = s.lower().strip()
+                    if ls and ls not in valid_targets:
+                        valid_targets.append(ls)
+
+            if valid_targets:
+                bt_lower = brief_title.lower()
+                ot_lower = official_title.lower()
+                interventions = str(protocol.get("armsInterventionsModule", {})).lower()
+                conditions = str(protocol.get("conditionsModule", {})).lower()
+                matched = any(
+                    target in bt_lower or target in ot_lower or target in interventions or target in conditions
+                    for target in valid_targets
+                )
+                if not matched:
+                    return None
 
             # Status & Dates
             status_mod = protocol.get("statusModule", {})

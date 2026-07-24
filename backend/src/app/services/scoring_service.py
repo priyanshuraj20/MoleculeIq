@@ -46,6 +46,10 @@ class ScoringService:
         logger.info("[ScoringService] Starting opportunity calculation for '%s'", context.molecule_name)
         start_time = time.monotonic()
 
+        if not context.has_meaningful_evidence:
+            logger.warning("[ScoringService] Skipping score calculation for '%s': No meaningful evidence found.", context.molecule_name)
+            raise ValueError(f"No research data or evidence found for molecule '{context.molecule_name}'.")
+
         meta = context.metadata
         explanations = []
 
@@ -73,24 +77,18 @@ class ScoringService:
             (0.20 * research_score),
             1
         )
-        explanations.append(
-            f"Overall Opportunity Score: {overall_score}/100 "
-            f"(Weighted: 30% Market [{market_score}], 25% Clinical [{clinical_score}], "
-            f"25% Patent [{patent_score}], 20% Literature [{research_score}])"
-        )
-
         # 6. Compute Confidence Score
         confidence_score, confidence_factors, conf_expl = self._score_confidence(context)
         explanations.extend(conf_expl)
 
-        # 7. Construct ScoreBreakdown & OpportunityScore
-        breakdown = ScoreBreakdown(
-            clinical_factors=clinical_factors,
-            market_factors=market_factors,
-            patent_factors=patent_factors,
-            literature_factors=lit_factors,
-            confidence_factors=confidence_factors,
-            explanation=explanations
+        # 5. Compute overall composite opportunity score (weighted sum)
+        # Market (30%), Clinical (25%), Patent (25%), Literature (20%)
+        overall_score = round(
+            (market_score * 0.30) +
+            (clinical_score * 0.25) +
+            (patent_score * 0.25) +
+            (research_score * 0.20),
+            1
         )
 
         score_obj = OpportunityScore(
@@ -100,14 +98,29 @@ class ScoringService:
             patent_score=patent_score,
             research_score=research_score,
             confidence_score=confidence_score,
-            score_breakdown=breakdown
+            score_breakdown=ScoreBreakdown(
+                clinical_factors=clinical_factors,
+                market_factors=market_factors,
+                patent_factors=patent_factors,
+                literature_factors=lit_factors,
+                confidence_factors=confidence_factors,
+                explanation=explanations,
+            ),
+            confidence_breakdown=self._build_confidence_breakdown(context, confidence_score),
+            category_weights={
+                "market": 30.0,
+                "clinical": 25.0,
+                "patent": 25.0,
+                "literature": 20.0
+            }
         )
 
         elapsed = round(time.monotonic() - start_time, 2)
         logger.info(
-            "[ScoringService] Score calculated for '%s' in %.2fs — Overall: %.1f, Confidence: %.1f",
+            "[ScoringService] Score calculated for '%s' in %.2fs: Overall=%.1f, Confidence=%.0f%%",
             context.molecule_name, elapsed, overall_score, confidence_score
         )
+
         return score_obj
 
     def evaluate_and_attach(self, context: ResearchContext) -> ResearchContext:
@@ -119,6 +132,86 @@ class ScoringService:
         """
         context.score = self.calculate(context)
         return context
+
+    def _build_confidence_breakdown(self, context: ResearchContext, overall_conf: float) -> dict:
+        meta = context.metadata
+        available = meta.domains_available
+
+        # Clinical
+        trials_cnt = len(context.clinical.trials) if context.clinical else 0
+        if "clinical" in available and trials_cnt >= 5:
+            c_status = "Strong"
+        elif "clinical" in available and trials_cnt > 0:
+            c_status = "Moderate"
+        elif "clinical" in available:
+            c_status = "Limited"
+        else:
+            c_status = "Unavailable"
+
+        # Literature
+        pubs_cnt = len(context.literature.publications) if context.literature else 0
+        if "literature" in available and pubs_cnt >= 3:
+            l_status = "Strong"
+        elif "literature" in available and pubs_cnt > 0:
+            l_status = "Moderate"
+        elif "literature" in available:
+            l_status = "Limited"
+        else:
+            l_status = "Unavailable"
+
+        # Patent
+        pat_cnt = meta.patent_count
+        if "patent" in available and pat_cnt >= 2:
+            p_status = "Strong"
+        elif "patent" in available and pat_cnt > 0:
+            p_status = "Moderate"
+        elif "patent" in available:
+            p_status = "Limited"
+        else:
+            p_status = "Unavailable"
+
+        # Market
+        mkt_sz = meta.global_market_size_usd_mn
+        if "market" in available and mkt_sz and mkt_sz > 0:
+            m_status = "Strong"
+        elif "market" in available:
+            m_status = "Moderate"
+        else:
+            m_status = "Unavailable"
+
+        return {
+            "overall_percent": int(overall_conf),
+            "sources": {
+                "clinical": {
+                    "domain": "Clinical Trials",
+                    "status": c_status,
+                    "count": trials_cnt,
+                    "source_name": "ClinicalTrials.gov API v2",
+                    "url": "https://clinicaltrials.gov"
+                },
+                "literature": {
+                    "domain": "Scientific Literature",
+                    "status": l_status,
+                    "count": pubs_cnt,
+                    "source_name": "Europe PMC REST API",
+                    "url": "https://europepmc.org"
+                },
+                "patent": {
+                    "domain": "Patent Landscape",
+                    "status": p_status,
+                    "count": pat_cnt,
+                    "source_name": "USPTO & EPO Patent Registry",
+                    "url": "https://patents.google.com"
+                },
+                "market": {
+                    "domain": "Market Intelligence",
+                    "status": m_status,
+                    "size_usd_mn": mkt_sz,
+                    "source_name": "IQVIA MIDAS Database",
+                    "url": "https://www.iqvia.com"
+                }
+            }
+        }
 
     # ------------------------------------------------------------------ #
     # Category Sub-Score Heuristics
