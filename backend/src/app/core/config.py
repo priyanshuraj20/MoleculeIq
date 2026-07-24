@@ -32,6 +32,12 @@ class Settings:
         if origin.strip()
     ]
 
+    # Authentication & JWT Configuration
+    GOOGLE_CLIENT_ID: str   = os.getenv("GOOGLE_CLIENT_ID", "")
+    JWT_SECRET_KEY: str     = os.getenv("JWT_SECRET_KEY", "moleculeiq_super_secret_jwt_key_2026_dev")
+    JWT_ALGORITHM: str      = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "10080"))  # 7 days
+
     # Upstash Redis Configuration
     REDIS_URL: str = os.getenv(
         "REDIS_URL",
@@ -39,7 +45,7 @@ class Settings:
     )
     REDIS_TTL_SECONDS: int = int(os.getenv("REDIS_TTL_SECONDS", 86400))  # 24 hours
 
-    # Supabase credentials (mock market + patent datasets)
+    # Supabase credentials (managed PostgreSQL DB)
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
 

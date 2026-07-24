@@ -26,8 +26,9 @@ import json
 import logging
 import time
 from typing import AsyncGenerator
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Depends
 from fastapi.responses import StreamingResponse
+from app.auth import get_current_user
 
 from app.domain.agent_state import AgentState
 from app.agents.clinical_agent import ClinicalTrialsAgent
@@ -209,7 +210,8 @@ async def stream_research_pipeline(
         ...,
         description="Target drug or chemical molecule name to research (e.g. 'Metformin', 'Ibuprofen').",
         examples=["Metformin"]
-    )
+    ),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     FastAPI GET endpoint streaming real-time SSE research events.

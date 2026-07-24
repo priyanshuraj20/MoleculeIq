@@ -3,26 +3,9 @@
  *
  * Manages SSE streaming connection to the backend research pipeline.
  * Endpoint: GET /api/v1/research/stream?molecule_name={name}
- *
- * SSE event sequence (deterministic, 12 events):
- *   1.  research_started
- *   2.  clinical_started
- *   3.  clinical_completed     → data: { trials_found, total_found }
- *   4.  literature_started
- *   5.  literature_completed   → data: { papers_found, total_found }
- *   6.  market_started
- *   7.  market_completed       → data: { points_found, global_size_usd_mn }
- *   8.  patent_started
- *   9.  patent_completed       → data: { records_found, fto_summary }
- *  10.  aggregation_completed  → data: { domains_available }
- *  11.  scoring_completed      → data: { overall_score, confidence_score }
- *  12.  research_completed     → data: full ResearchContext JSON
- *  ERR. research_failed        → data: { error }
  */
 
 import { API_CONFIG } from '../config/api.config';
-
-// ─── SSE event → human-friendly status message mapping ───────────────────────
 
 export const SSE_STATUS_MESSAGES = {
   research_started:      'Initializing research pipeline…',
@@ -41,23 +24,25 @@ export const SSE_STATUS_MESSAGES = {
 };
 
 /**
+ * Helper to retrieve stored access_token from localStorage
+ */
+function getAuthToken() {
+  return localStorage.getItem('access_token') || '';
+}
+
+/**
  * streamResearch
- *
- * Opens an SSE connection to the backend and calls the provided callbacks
- * as events arrive.
- *
- * @param {string}   moleculeName
- * @param {function} onStatusUpdate  (message: string, eventName: string) => void
- * @param {function} onComplete      (researchContext: object) => void
- * @param {function} onError         (message: string) => void
- * @returns {EventSource} — caller must call .close() to clean up
  */
 export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError) {
-  const url = `${API_CONFIG.baseURL}/api/v1/research/stream?molecule_name=${encodeURIComponent(moleculeName)}`;
+  const token = getAuthToken();
+  let url = `${API_CONFIG.baseURL}/api/v1/research/stream?molecule_name=${encodeURIComponent(moleculeName)}`;
+  if (token) {
+    url += `&token=${encodeURIComponent(token)}`;
+  }
 
-  const es = new EventSource(url);
+  // EventSource automatically includes cookies if credentials are sent in same origin or with credentials setting
+  const es = new EventSource(url, { withCredentials: true });
 
-  // ── Progress events ────────────────────────────────────────────────────────
   const progressEvents = [
     'research_started',
     'clinical_started',
@@ -79,7 +64,6 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     });
   });
 
-  // ── Terminal: success ──────────────────────────────────────────────────────
   es.addEventListener('research_completed', (e) => {
     try {
       const researchContext = JSON.parse(e.data);
@@ -91,7 +75,6 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     es.close();
   });
 
-  // ── Terminal: backend pipeline failure ────────────────────────────────────
   es.addEventListener('research_failed', (e) => {
     try {
       const parsed = JSON.parse(e.data);
@@ -102,7 +85,6 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     es.close();
   });
 
-  // ── Network / connection error ─────────────────────────────────────────────
   es.onerror = () => {
     onError('Unable to connect to the research backend. Please ensure the server is running.');
     es.close();
@@ -115,10 +97,17 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
  * Downloads standardized JSON report export.
  */
 export async function downloadJsonReport(moleculeName) {
+  const token = getAuthToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const url = `${API_CONFIG.baseURL}/api/research/json`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
+    credentials: 'include',
     body: JSON.stringify({ molecule_name: moleculeName }),
   });
 
@@ -142,8 +131,18 @@ export async function downloadJsonReport(moleculeName) {
  * Downloads C-suite Executive PDF Report.
  */
 export async function downloadPdfReport(moleculeName) {
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const url = `${API_CONFIG.baseURL}/api/research/pdf?molecule_name=${encodeURIComponent(moleculeName)}`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers,
+    credentials: 'include',
+  });
+
   if (!response.ok) {
     throw new Error(`Server returned HTTP ${response.status}`);
   }

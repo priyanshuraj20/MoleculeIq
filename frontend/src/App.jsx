@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import ResearchPage from './pages/ResearchPage';
 import ReportPage from './pages/ReportPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ProtectedRoute from './auth/ProtectedRoute';
 
 export default function App() {
   return (
@@ -12,8 +13,22 @@ export default function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<LandingPage />} />
-          <Route path="research" element={<ResearchPage />} />
-          <Route path="report" element={<ReportPage />} />
+          <Route
+            path="research"
+            element={
+              <ProtectedRoute>
+                <ResearchPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="report"
+            element={
+              <ProtectedRoute>
+                <ReportPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

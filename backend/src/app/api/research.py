@@ -17,11 +17,12 @@ Pipeline Execution Sequence:
 import dataclasses
 import logging
 import time
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, HTTPException, Query, Response, status, Depends
 from pydantic import BaseModel, Field, field_validator
 
 from app.orchestrator import run_research_pipeline
 from app.services import AggregationService, ScoringService
+from app.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ _cache_service = CacheService()
     summary="Execute Multi-Agent Research Pipeline",
     description="Executes full research pipeline for single molecule or auto-detects ' vs ' comparison queries."
 )
-async def execute_research_pipeline(payload: ResearchRequest):
+async def execute_research_pipeline(payload: ResearchRequest, current_user: dict = Depends(get_current_user)):
     """
     FastAPI endpoint executing research pipeline, aggregation, and scoring.
     Checks Redis cache first. On miss, runs LangGraph and saves report to Redis.
@@ -166,7 +167,7 @@ async def execute_research_pipeline(payload: ResearchRequest):
     summary="Execute Parallel Molecule Comparison",
     description="Runs parallel research for two molecules and synthesizes side-by-side domain comparison matrix."
 )
-async def execute_molecule_comparison(payload: ComparisonRequest):
+async def execute_molecule_comparison(payload: ComparisonRequest, current_user: dict = Depends(get_current_user)):
     """
     Dedicated endpoint for comparing two molecules side-by-side.
     """
@@ -185,7 +186,7 @@ async def execute_molecule_comparison(payload: ComparisonRequest):
     summary="Generate Downloadable JSON Research Report",
     description="Returns standardized downstream API JSON report with processing metadata and citations."
 )
-async def export_research_json(payload: ResearchRequest):
+async def export_research_json(payload: ResearchRequest, current_user: dict = Depends(get_current_user)):
     """
     FastAPI endpoint returning structured JSON report export.
     """
@@ -223,7 +224,8 @@ async def download_research_pdf(
         ...,
         description="Target drug or chemical molecule name (e.g. 'Metformin', 'Ibuprofen').",
         examples=["Metformin"]
-    )
+    ),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     FastAPI GET endpoint generating and serving an executive PDF research report.
