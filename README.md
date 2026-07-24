@@ -67,30 +67,50 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 
 ```mermaid
 graph TD
-    User["React + Vite Frontend"] --> OAuth["Google OAuth 2.0"]
-    OAuth --> Backend["FastAPI Backend"]
-    Backend --> Auth["JWT Verification & HttpOnly Cookie"]
-    Auth --> DB["Supabase PostgreSQL (Users Table Only)"]
-    Auth --> Service["Research Service"]
-    
-    Service --> Cache["Upstash Redis Cache"]
-    Cache -->|Cache Hit| ReturnCached["Return Cached Report Immediately"]
-    Cache -->|Cache Miss| Graph["LangGraph Multi-Agent Pipeline"]
-    
-    Graph --> Agent1["🩺 Clinical Agent"]
-    Graph --> Agent2["📚 Literature Agent"]
-    Graph --> Agent3["🛡️ Patent Agent"]
-    Graph --> Agent4["📊 Market Agent"]
-    
-    Agent1 --> Exec["Executive Summary Synthesizer"]
-    Agent2 --> Exec
-    Agent3 --> Exec
-    Agent4 --> Exec
-    
-    Exec --> Score["Opportunity Score Engine (0-100)"]
-    Score --> Output["Frontend Research Dashboard"]
-    Output --> PDF["📄 C-Suite PDF Export"]
-    Output --> JSON["📦 API JSON Export"]
+
+A["React + Vite"]
+
+A --> B["Google OAuth"]
+
+B --> C["FastAPI Backend"]
+
+C --> D["JWT Authentication"]
+
+D --> E["Supabase PostgreSQL"]
+
+D --> F["Research Service"]
+
+F --> G["Redis Cache"]
+
+G --> H{"Cache Hit?"}
+
+H -->|Yes| I["Return Cached Report"]
+
+H -->|No| J["LangGraph"]
+
+J --> K["Clinical Agent"]
+
+J --> L["Literature Agent"]
+
+J --> M["Patent Agent"]
+
+J --> N["Market Agent"]
+
+K --> O["Executive Summary"]
+
+L --> O
+
+M --> O
+
+N --> O
+
+O --> P["Opportunity Score"]
+
+P --> Q["Frontend"]
+
+Q --> R["PDF Export"]
+
+Q --> S["JSON Export"]
 ```
 
 ### 🧠 AI Research Pipeline Workflow
