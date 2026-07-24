@@ -20,6 +20,18 @@
   <b>MoleculeIQ</b> orchestrates specialized AI research agents across clinical trial registries, scientific literature, patent databases, and market intelligence to generate publication-grade executive drug repurposing reports in seconds.
 </p>
 
+<br />
+
+<div align="center">
+
+### 📸 Application Interface
+
+| Google Authentication | Authenticated Workspace | Research Intelligence Dashboard |
+| :---: | :---: | :---: |
+| <img src="assets/landing-page.png" width="280" alt="Landing Page with Google Auth" /> | <img src="assets/profile-menu.png" width="280" alt="Profile Dropdown" /> | <img src="assets/research-report.png" width="280" alt="Research Results Dashboard" /> |
+
+</div>
+
 </div>
 
 ---
