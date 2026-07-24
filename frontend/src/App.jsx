@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import ResearchPage from './pages/ResearchPage';
+import ReportPage from './pages/ReportPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<LandingPage />} />
           <Route path="research" element={<ResearchPage />} />
+          <Route path="report" element={<ReportPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

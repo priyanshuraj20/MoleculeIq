@@ -28,9 +28,9 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Navigation */}
+          {/* Product Links */}
           <div>
-            <h4 className="font-semibold text-white text-sm mb-3">Platform</h4>
+            <h4 className="font-semibold text-white text-sm mb-3">Product</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/research" className="hover:text-white transition-colors">
@@ -44,29 +44,28 @@ export default function Footer() {
               </li>
               <li>
                 <a href="#how-it-works" className="hover:text-white transition-colors">
-                  Orchestration Pipeline
+                  How It Works
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Technology */}
+          {/* Resources & GitHub */}
           <div>
-            <h4 className="font-semibold text-white text-sm mb-3">Technology Stack</h4>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                React
-              </span>
-              <span className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                FastAPI
-              </span>
-              <span className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                LangGraph
-              </span>
-              <span className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                Supabase
-              </span>
-            </div>
+            <h4 className="font-semibold text-white text-sm mb-3">Resources</h4>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="https://github.com/priyanshuraj20/MoleculeIq"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+                >
+                  <GithubIcon className="w-4 h-4" />
+                  GitHub Repository
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 

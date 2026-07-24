@@ -11,6 +11,16 @@ const GithubIcon = ({ className = "w-4 h-4" }) => (
 export default function Navbar() {
   const location = useLocation();
 
+  const handleNavClick = (e, targetId) => {
+    if (location.pathname === '/') {
+      e.preventDefault();
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -34,10 +44,18 @@ export default function Navbar() {
           >
             Research
           </Link>
-          <a href="#features" className="transition-colors hover:text-slate-900">
+          <a
+            href="/#features"
+            onClick={(e) => handleNavClick(e, 'features')}
+            className="transition-colors hover:text-slate-900"
+          >
             Features
           </a>
-          <a href="#how-it-works" className="transition-colors hover:text-slate-900">
+          <a
+            href="/#how-it-works"
+            onClick={(e) => handleNavClick(e, 'how-it-works')}
+            className="transition-colors hover:text-slate-900"
+          >
             How It Works
           </a>
           <a
@@ -55,7 +73,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <Link
             to="/research"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
           >
             Start Research
             <ArrowRight className="w-4 h-4" />

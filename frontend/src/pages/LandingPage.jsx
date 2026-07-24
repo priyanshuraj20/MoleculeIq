@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   BookOpen,
@@ -8,219 +8,183 @@ import {
   ArrowRight,
   CheckCircle2,
   Search,
-  Cpu,
-  BarChart3,
-  FileText,
-  Download
 } from 'lucide-react';
 
-const GithubIcon = ({ className = "w-5 h-5" }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-  </svg>
-);
+import ArchitectureDiagram from '../components/landing/ArchitectureDiagram';
+
+// ─── constants ────────────────────────────────────────────────────────────────
+
+const EXAMPLE_MOLECULES = ['Metformin', 'Ibuprofen', 'Pembrolizumab', 'Semaglutide'];
+
+const DOMAINS = [
+  {
+    icon: Activity,
+    title: 'Clinical Evidence',
+    description:
+      'Track trial phases, recruitment status, lead sponsors, and clinical study outcomes.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Scientific Literature',
+    description:
+      'Analyze peer-reviewed publications, citation metrics, and research momentum.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Market Intelligence',
+    description:
+      'Evaluate market size, annual CAGR growth, and regional competitor footprints.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Patent Landscape',
+    description:
+      'Inspect patent filing status, expiration dates, and Freedom-To-Operate indicators.',
+  },
+];
+
+// ─── component ────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  return (
-    <div className="space-y-20 pb-16">
-      {/* Hero Section */}
-      <section className="relative bg-white border-b border-slate-200 py-20 lg:py-28 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            {/* Platform Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-              Pharmaceutical Research Intelligence Platform
-            </div>
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight leading-tight">
+  const submit = (e) => {
+    e.preventDefault();
+    navigate(query.trim() ? `/research?q=${encodeURIComponent(query.trim())}` : '/research');
+  };
+
+  const pickExample = (mol) => {
+    navigate(`/research?q=${encodeURIComponent(mol)}`);
+  };
+
+  return (
+    <div className="space-y-14 pb-16">
+
+      {/* ── Hero Section ────────────────────────────────────────────────── */}
+      <section className="bg-white border-b border-slate-200 py-10 lg:py-14">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
+
+          {/* Badge */}
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+            Pharmaceutical Research Intelligence
+          </span>
+
+          {/* Heading */}
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
               Molecule<span className="text-indigo-600">IQ</span>
             </h1>
-
-            {/* Subtitle / Description */}
-            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed font-normal">
-              Search clinical evidence, scientific literature, market intelligence, and patent insights for pharmaceutical molecules from one unified interface.
+            <p className="text-sm sm:text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
+              Consolidate clinical trials, scientific literature, market intelligence,
+              and patent landscapes for any pharmaceutical molecule — in one report.
             </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link
-                to="/research"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
-              >
-                Start Research
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <a
-                href="https://github.com/priyanshuraj20/MoleculeIq"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-all"
-              >
-                <GithubIcon className="w-5 h-5" />
-                View GitHub
-              </a>
-            </div>
-
-            {/* Key Value Highlights */}
-            <div className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Deterministic Scoring Engine
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Real-Time SSE Streaming
-              </div>
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Publication-Ready PDF Reports
-              </div>
-            </div>
           </div>
+
+          {/* Search Input Form */}
+          <form onSubmit={submit} className="max-w-lg mx-auto">
+            <div className="flex gap-2 p-1.5 bg-white border border-slate-300 rounded-xl shadow-sm focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 transition-all">
+              <div className="relative flex-grow flex items-center">
+                <Search className="w-4 h-4 absolute left-3 text-slate-400" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Enter a molecule or drug name…"
+                  className="w-full pl-9 pr-3 py-2 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none transition-colors"
+              >
+                Search
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+
+          {/* Example Molecule Chips */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+            <span className="text-slate-400 font-medium">Try:</span>
+            {EXAMPLE_MOLECULES.map((mol) => (
+              <button
+                key={mol}
+                type="button"
+                onClick={() => pickExample(mol)}
+                className="px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 transition-colors font-mono cursor-pointer"
+              >
+                {mol}
+              </button>
+            ))}
+          </div>
+
+          {/* Value propositions */}
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-5 text-xs text-slate-600 font-medium border-t border-slate-100">
+            {[
+              'Multi-Domain Data Synthesis',
+              'Commercial Opportunity Analysis',
+              'Structured Executive Reports',
+            ].map((label) => (
+              <div key={label} className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                {label}
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
-      {/* Feature Section — Four Clean Domain Cards */}
-      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Four-Domain Intelligence Architecture
+      {/* ── Four-Domain Intelligence Section ─────────────────────────────── */}
+      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="text-center max-w-lg mx-auto space-y-1.5">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            Four-Domain Intelligence
           </h2>
-          <p className="text-slate-600 text-sm">
-            Unified data retrieval and analysis across key pharmaceutical research domains.
+          <p className="text-slate-500 text-xs sm:text-sm">
+            Comprehensive data aggregation across key pharmaceutical research domains.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Clinical Evidence */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <Activity className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Clinical Evidence</h3>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Access real-time clinical trial records from ClinicalTrials.gov. Track development phases, recruitment status, and lead sponsors.
-            </p>
-          </div>
-
-          {/* Card 2: Scientific Literature */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Scientific Literature</h3>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Query peer-reviewed publications from Europe PMC. Analyze publication trends, high-impact citations, and research momentum.
-            </p>
-          </div>
-
-          {/* Card 3: Market Intelligence */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Market Intelligence</h3>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Evaluate global market sizes, annual CAGR growth metrics, and regional competitor footprints for commercial feasibility.
-            </p>
-          </div>
-
-          {/* Card 4: Patent Landscape */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Patent Landscape</h3>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Inspect patent filing statuses, expiration timelines, and Freedom-To-Operate (FTO) constraint risks for generic market entry.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl p-8 lg:p-12 border border-slate-200 shadow-sm space-y-10">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              How MoleculeIQ Works
-            </h2>
-            <p className="text-slate-600 text-sm">
-              End-to-end multi-agent orchestration pipeline from query to downloadable PDF report.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
-            {/* Step 1 */}
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 font-bold mx-auto">
-                <Search className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">1. Search Molecule</h4>
-              <p className="text-xs text-slate-500">Input target drug or compound name.</p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 font-bold mx-auto">
-                <Cpu className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">2. Research Pipeline</h4>
-              <p className="text-xs text-slate-500">LangGraph DAG triggers worker agents.</p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 font-bold mx-auto">
-                <BarChart3 className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">3. Opportunity Score</h4>
-              <p className="text-xs text-slate-500">Engine computes commercial sub-scores.</p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 font-bold mx-auto">
-                <FileText className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">4. Executive Report</h4>
-              <p className="text-xs text-slate-500">Synthesizes C-suite strategic report.</p>
-            </div>
-
-            {/* Step 5 */}
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 font-bold mx-auto">
-                <Download className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">5. Download PDF</h4>
-              <p className="text-xs text-slate-500">Export publication-ready PDF report.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-indigo-600 rounded-2xl p-8 sm:p-12 text-center text-white space-y-6 shadow-md">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Accelerate Pharmaceutical Research Today
-          </h2>
-          <p className="text-indigo-100 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
-            Search any molecule to generate instant multi-domain research contexts, opportunity scores, and executive reports.
-          </p>
-          <div>
-            <Link
-              to="/research"
-              className="inline-flex items-center gap-2 px-6 py-3.5 text-base font-semibold text-indigo-600 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition-colors"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {DOMAINS.map(({ icon: Icon, title, description }) => (
+            <div
+              key={title}
+              className="bg-white rounded-xl p-5 border border-slate-200 hover:border-slate-300 transition-colors space-y-3 shadow-sm"
             >
-              Launch Research Portal
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <Icon className="w-4.5 h-4.5" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+              <p className="text-slate-500 text-xs leading-relaxed">{description}</p>
+            </div>
+          ))}
         </div>
       </section>
+
+      {/* ── How It Works Section (Product Lifecycle Flow) ───────────────── */}
+      <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-24">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-xs font-mono font-semibold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+            Request Lifecycle
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            How MoleculeIQ Works
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl mx-auto">
+            From a single molecule query to a C-suite executive report in seconds.
+          </p>
+        </div>
+
+        {/* Clean Product Request Lifecycle Component */}
+        <ArchitectureDiagram />
+
+      </section>
+
     </div>
   );
 }

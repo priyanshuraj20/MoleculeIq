@@ -1,56 +1,62 @@
 """
-MoleculeIQ — FastAPI Application Gateway Entry Point.
-
-This is the main entry point of the backend application.
-It initializes the FastAPI application, configures CORS middleware for frontend communication,
-and registers global routes like the health check endpoint.
+MoleculeIQ FastAPI Application Gateway.
 """
 
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
+from fastapi.responses import JSONResponse
 
-# Initialize FastAPI app instance with metadata for Swagger UI
+from app.core.config import settings
+from app.api import research_router, stream_router
+
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Production-grade AI SaaS API Gateway for Pharmaceutical Innovation Intelligence.",
+    description="AI SaaS API Gateway for Pharmaceutical Research Intelligence.",
     version="1.0.0",
-    docs_url="/docs",      # Interactive Swagger UI documentation path
-    redoc_url="/redoc",    # Alternative ReDoc documentation path
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Configure Cross-Origin Resource Sharing (CORS)
-# This allows our React frontend (running on e.g. localhost:5173) to safely make API calls
+# Configure CORS with origin regex to match any local development port dynamically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-from app.api import research_router, stream_router
-
-# Include API Routers
+# Register API Routers
 app.include_router(research_router)
 app.include_router(stream_router)
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler to capture unhandled errors gracefully."""
+    logger.error("Unhandled error processing request %s: %s", request.url.path, str(exc), exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "An unexpected internal server error occurred. Please check backend logs.",
+            "path": request.url.path,
+        },
+    )
+
+
 @app.get("/health", tags=["System Health"])
 async def health_check():
-    """
-    Health Check Endpoint.
-
-    Returns standard JSON status indicating that the backend server is online and operational.
-    Used by load balancers, monitoring tools, and frontend connection checks.
-    """
-    return {"status": "ok"}
+    """Health check endpoint."""
+    return {"status": "ok", "app": settings.APP_NAME, "version": "1.0.0"}
 
 
 if __name__ == "__main__":
     import uvicorn
-    # Allow running main.py directly for local debugging
+
     uvicorn.run(
         "app.main:app",
         host=settings.HOST,
