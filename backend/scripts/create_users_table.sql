@@ -15,3 +15,6 @@ CREATE TABLE IF NOT EXISTS public.users (
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON public.users(google_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
+
+-- Disable RLS so backend FastAPI database operations can read/write users table
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;

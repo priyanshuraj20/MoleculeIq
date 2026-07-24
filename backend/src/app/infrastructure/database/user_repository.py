@@ -7,15 +7,37 @@ Responsibilities:
   1. Lookup user by google_id or email.
   2. Insert new user record on first-time login.
   3. Update last_login_at timestamp on every login event.
-  4. Handle DB exceptions gracefully.
+  4. Handle DB exceptions gracefully with clear error messages.
 """
 
 import logging
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
+from fastapi import HTTPException, status
 from app.infrastructure.database.supabase_client import get_supabase
 
 logger = logging.getLogger(__name__)
+
+
+def _handle_db_error(err: Exception, context: str):
+    """Formats database errors into actionable developer-friendly messages."""
+    err_str = str(err)
+    if "PGRST205" in err_str or "public.users" in err_str or "schema cache" in err_str:
+        msg = (
+            "Supabase database table 'public.users' does not exist yet. "
+            "Please copy and run the SQL script in backend/scripts/create_users_table.sql "
+            "in your Supabase SQL Editor (https://supabase.com/dashboard/project/tlxyazbunhlnzjmwyqjw/sql)."
+        )
+        logger.critical(msg)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg
+        )
+    logger.error("Database query failed during %s: %s", context, err_str, exc_info=True)
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"Database error during {context}: {err_str}"
+    )
 
 
 class UserRepository:
@@ -37,9 +59,10 @@ class UserRepository:
             if res.data and len(res.data) > 0:
                 return res.data[0]
             return None
-        except Exception as err:
-            logger.error("Failed to fetch user by google_id=%s: %s", google_id, err, exc_info=True)
+        except HTTPException:
             raise
+        except Exception as err:
+            _handle_db_error(err, f"get_by_google_id({google_id})")
 
     def get_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """Find a user by their email address."""
@@ -54,9 +77,10 @@ class UserRepository:
             if res.data and len(res.data) > 0:
                 return res.data[0]
             return None
-        except Exception as err:
-            logger.error("Failed to fetch user by email=%s: %s", email, err, exc_info=True)
+        except HTTPException:
             raise
+        except Exception as err:
+            _handle_db_error(err, f"get_by_email({email})")
 
     def create_user(
         self,
@@ -85,9 +109,10 @@ class UserRepository:
                 logger.info("Created new user: id=%s email=%s", res.data[0].get("id"), email)
                 return res.data[0]
             raise RuntimeError("Supabase insert returned empty data")
-        except Exception as err:
-            logger.error("Failed to create user email=%s: %s", email, err, exc_info=True)
+        except HTTPException:
             raise
+        except Exception as err:
+            _handle_db_error(err, f"create_user({email})")
 
     def update_last_login(self, google_id: str) -> Dict[str, Any]:
         """
@@ -107,8 +132,8 @@ class UserRepository:
             )
             if res.data and len(res.data) > 0:
                 return res.data[0]
-            # Fallback query if update doesn't return data
             return self.get_by_google_id(google_id)
-        except Exception as err:
-            logger.error("Failed to update last_login_at for google_id=%s: %s", google_id, err, exc_info=True)
+        except HTTPException:
             raise
+        except Exception as err:
+            _handle_db_error(err, f"update_last_login({google_id})")
