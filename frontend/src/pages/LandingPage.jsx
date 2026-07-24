@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import MoleculeIQLogo from '../components/MoleculeIQLogo';
 
 const EXAMPLE_MOLECULES = ['Metformin', 'Ibuprofen', 'Pembrolizumab', 'Semaglutide'];
@@ -20,55 +20,98 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-white px-4 sm:px-6 lg:px-8 py-12 pb-24">
+    <div
+      className="min-h-[calc(100vh-4.5rem)] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 pb-24"
+      style={{ backgroundColor: 'var(--color-bg)' }}
+    >
       <div className="max-w-2xl w-full mx-auto text-center space-y-8">
-        
-        {/* Centered Logo Icon */}
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-indigo-600">
-            <MoleculeIQLogo className="w-10 h-10" />
-          </div>
+
+        {/* Center Logo — prominent and clear */}
+        <div className="flex justify-center py-2">
+          <MoleculeIQLogo style={{ height: '115px', width: 'auto', display: 'block' }} />
         </div>
 
-        {/* Welcome Title & Short Subtitle */}
+        {/* Heading */}
         <div className="space-y-3">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+          <h1
+            className="text-3xl sm:text-4xl font-bold"
+            style={{ color: 'var(--color-text)', letterSpacing: '-0.02em' }}
+          >
             Welcome to MoleculeIQ
           </h1>
-          <p className="text-sm sm:text-base text-slate-500 max-w-lg mx-auto leading-relaxed">
-            Discover drug repurposing opportunities powered by MoleculeIQ AI analyzing market data, clinical trials, patents, and scientific literature.
+          <p
+            className="text-base max-w-lg mx-auto leading-relaxed"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Discover drug repurposing opportunities powered by AI analyzing
+            market data, clinical trials, patents, and scientific literature.
           </p>
         </div>
 
-        {/* Search Prompt Input Bar */}
+        {/* Search Bar — flat, clean human design */}
         <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
-          <div className="relative flex items-center shadow-xs">
+          <div
+            className="relative flex items-center bg-white border transition-all"
+            style={{
+              borderColor: 'var(--color-border)',
+              boxShadow: 'var(--shadow-soft)',
+              borderRadius: '8px',
+            }}
+          >
+            <Search
+              className="absolute left-4 w-4 h-4 pointer-events-none shrink-0"
+              style={{ color: 'var(--color-text-faint)' }}
+            />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask about drug repurposing opportunities..."
-              className="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+              placeholder="Enter a molecule or drug name..."
+              className="w-full h-12 pl-11 pr-12 bg-transparent text-sm focus:outline-none"
+              style={{ color: 'var(--color-text)', borderRadius: '8px' }}
+              onFocus={(e) => { e.currentTarget.parentElement.style.borderColor = 'var(--color-blue)'; }}
+              onBlur={(e)  => { e.currentTarget.parentElement.style.borderColor = 'var(--color-border)'; }}
             />
             <button
               type="submit"
               disabled={!query.trim()}
-              className="absolute right-2 p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="absolute right-2 w-8 h-8 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              style={{ backgroundColor: 'var(--color-blue)', color: '#ffffff', borderRadius: '6px' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = 'var(--color-blue-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-blue)'; }}
             >
-              <Send className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </form>
 
-        {/* Example Compound Chips */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-          <span className="text-xs text-slate-400 font-medium">Try:</span>
+        {/* Example chips */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span
+            className="text-xs font-medium"
+            style={{ color: 'var(--color-text-faint)' }}
+          >
+            Try:
+          </span>
           {EXAMPLE_MOLECULES.map((mol) => (
             <button
               key={mol}
               type="button"
               onClick={() => handlePickExample(mol)}
-              className="px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 bg-white text-xs font-medium border transition-all cursor-pointer"
+              style={{
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-muted)',
+                borderRadius: '6px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-blue)';
+                e.currentTarget.style.color = 'var(--color-blue)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+                e.currentTarget.style.color = 'var(--color-text-muted)';
+              }}
             >
               {mol}
             </button>

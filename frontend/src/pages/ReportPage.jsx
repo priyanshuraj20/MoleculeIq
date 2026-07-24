@@ -176,7 +176,7 @@ export default function ReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-16 space-y-6">
+    <div className="min-h-screen pb-16 space-y-6" style={{ backgroundColor: 'var(--color-bg)' }}>
 
       {/* ── Top Sticky Toolbar ──────────────────────────────────────────── */}
       <ReportToolbar
@@ -205,10 +205,10 @@ export default function ReportPage() {
 
         {/* ── Loading Spinner for pipeline research ────────────────────── */}
         {isLoading && (
-          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center space-y-3 shadow-sm">
-            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto" />
-            <p className="text-sm font-medium text-slate-700">Synthesizing Executive Report…</p>
-            <p className="text-xs text-slate-400">{statusMessage}</p>
+          <div className="bg-white rounded-xl border p-12 text-center space-y-3" style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-soft)' }}>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: 'var(--color-blue)' }} />
+            <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>Synthesizing Executive Report…</p>
+            <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>{statusMessage}</p>
           </div>
         )}
 

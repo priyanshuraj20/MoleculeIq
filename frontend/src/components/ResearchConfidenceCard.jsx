@@ -10,56 +10,103 @@ export default function ResearchConfidenceCard({ scoreObj, metadata }) {
   const getBadge = (status) => {
     switch (status) {
       case 'Strong':
-        return <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200"><CheckCircle2 className="w-3 h-3 text-emerald-600" /> ✓ Strong</span>;
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded border"
+            style={{ backgroundColor: '#f0fdfb', color: 'var(--color-teal)', borderColor: 'var(--color-teal-dim)' }}
+          >
+            <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--color-teal)' }} /> Strong
+          </span>
+        );
       case 'Moderate':
-        return <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200"><CheckCircle2 className="w-3 h-3 text-blue-600" /> ✓ Moderate</span>;
+        return (
+          <span
+            className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded border"
+            style={{ backgroundColor: '#eff4ff', color: 'var(--color-blue)', borderColor: 'var(--color-blue-light)' }}
+          >
+            <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--color-blue)' }} /> Moderate
+          </span>
+        );
       case 'Limited':
-        return <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200"><AlertTriangle className="w-3 h-3 text-amber-600" /> ✓ Limited</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+            <AlertTriangle className="w-3 h-3 text-amber-600" /> Limited
+          </span>
+        );
       default:
-        return <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200"><XCircle className="w-3 h-3 text-rose-600" /> ❌ Unavailable</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded border bg-rose-50 text-rose-700 border-rose-200">
+            <XCircle className="w-3 h-3 text-rose-600" /> Unavailable
+          </span>
+        );
     }
   };
 
   const sourcesList = [
-    { key: 'clinical', label: 'Clinical Trials', info: breakdown.clinical },
-    { key: 'literature', label: 'Scientific Literature', info: breakdown.literature },
-    { key: 'patent', label: 'Patent Landscape', info: breakdown.patent },
-    { key: 'market', label: 'Market Intelligence', info: breakdown.market },
+    { key: 'clinical',    label: 'Clinical Trials',       info: breakdown.clinical },
+    { key: 'literature',  label: 'Scientific Literature',  info: breakdown.literature },
+    { key: 'patent',      label: 'Patent Landscape',       info: breakdown.patent },
+    { key: 'market',      label: 'Market Intelligence',    info: breakdown.market },
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 my-6">
+    <div
+      className="bg-white border rounded-xl p-6 space-y-4"
+      style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-soft)' }}
+    >
       {/* Header */}
-      <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+      <div
+        className="flex justify-between items-center border-b pb-4"
+        style={{ borderColor: 'var(--color-border-light)' }}
+      >
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900">Research Confidence & Evidence Availability</h3>
+          <ShieldCheck className="w-5 h-5" style={{ color: 'var(--color-blue)' }} />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
+            Research Confidence &amp; Evidence Availability
+          </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-medium">Confidence Score</span>
-          <span className="text-xl font-extrabold text-slate-900">{confPercent.toFixed(0)}%</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--color-text-faint)' }}>
+            Confidence Score
+          </span>
+          <span
+            className="text-xl font-bold tabular-nums"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {confPercent.toFixed(0)}%
+          </span>
         </div>
       </div>
 
-      {/* Source Matrix */}
+      {/* Source matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sourcesList.map((s) => {
           const status = s.info?.status || 'Unavailable';
-          const name = s.info?.source_name || s.label;
-          const url = s.info?.url || '#';
+          const name   = s.info?.source_name || s.label;
+          const url    = s.info?.url || '#';
 
           return (
-            <div key={s.key} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <div
+              key={s.key}
+              className="p-3.5 rounded-xl border flex justify-between items-center"
+              style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border-light)' }}
+            >
               <div>
-                <span className="text-xs font-bold text-slate-700 block">{s.label}</span>
+                <span
+                  className="text-xs font-bold block"
+                  style={{ color: 'var(--color-text)' }}
+                >
+                  {s.label}
+                </span>
                 <a
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-indigo-600 hover:underline inline-flex items-center gap-1 mt-0.5 font-medium"
+                  className="text-xs hover:underline inline-flex items-center gap-1 mt-0.5 font-medium"
+                  style={{ color: 'var(--color-blue)' }}
                 >
                   {name}
-                  <ExternalLink className="w-3 h-3 text-indigo-500" />
+                  <ExternalLink className="w-3 h-3" style={{ color: 'var(--color-blue)' }} />
                 </a>
               </div>
               <div>{getBadge(status)}</div>

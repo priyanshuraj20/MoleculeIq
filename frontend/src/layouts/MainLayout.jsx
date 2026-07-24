@@ -5,7 +5,10 @@ import Footer from '../components/Footer';
 
 export default function MainLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
+    <div
+      className="min-h-screen flex flex-col font-sans antialiased"
+      style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}
+    >
       <Navbar />
       <main className="flex-grow">
         <Outlet />

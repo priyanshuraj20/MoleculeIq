@@ -1,11 +1,72 @@
 /* Tailwind CSS v4 import */
 @import "tailwindcss";
 
-/* Clean, human-crafted global body styling */
+/* ── Google Fonts: Inter ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Design System CSS Variables (Stitch "Clinical Precision") ────── */
+:root {
+  --color-bg:              #f7f9fb;
+  --color-surface:         #ffffff;
+  --color-border:          #c6c6cd;
+  --color-border-light:    #e6e8ea;
+  --color-text:            #191c1e;
+  --color-text-muted:      #45464d;
+  --color-text-faint:      #76777d;
+
+  --color-blue:            #0051d5;
+  --color-blue-hover:      #0041b0;
+  --color-blue-light:      #dbe1ff;
+  --color-blue-container:  #316bf3;
+
+  --color-teal:            #0c9488;
+  --color-teal-light:      #89f5e7;
+  --color-teal-dim:        #6bd8cb;
+
+  --color-navy:            #131b2e;
+  --color-navy-text:       #7c839b;
+
+  --color-error:           #ba1a1a;
+
+  --shadow-soft:  0px 4px 20px rgba(15, 23, 42, 0.05);
+  --shadow-card:  0px 1px 4px rgba(15, 23, 42, 0.06);
+
+  /* Border radius — keep it subtle and human */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-card: 10px;
+}
+
+/* ── Global Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent AI-hype feel: keep base font weight normal */
+  font-weight: 400;
 }
+
+/* ── Utilities ────────────────────────────────────────────────────── */
+.soft-shadow  { box-shadow: var(--shadow-soft); }
+.card-shadow  { box-shadow: var(--shadow-card); }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #c6c6cd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #76777d; }
+
+/* ── Subtle fade-in ────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.3s ease both; }
