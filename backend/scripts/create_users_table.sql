@@ -16,5 +16,14 @@ CREATE TABLE IF NOT EXISTS public.users (
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON public.users(google_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 
--- Disable RLS so backend FastAPI database operations can read/write users table
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+-- Enable RLS and add a permissive policy for public/anon access
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all operations for anon" ON public.users;
+
+CREATE POLICY "Allow all operations for anon"
+ON public.users
+FOR ALL
+TO public
+USING (true)
+WITH CHECK (true);
