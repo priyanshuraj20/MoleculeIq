@@ -93,6 +93,31 @@ graph TD
     Output --> JSON["📦 API JSON Export"]
 ```
 
+### 🧠 AI Research Pipeline Workflow
+
+```mermaid
+flowchart LR
+    Query["Research Query"] --> API["FastAPI"]
+    API --> Redis{"Redis Cache"}
+    
+    Redis -->|Cache Hit| Return["Cached Report"]
+    Redis -->|Cache Miss| LG["LangGraph Pipeline"]
+    
+    LG --> C["Clinical Agent"]
+    LG --> L["Literature Agent"]
+    LG --> P["Patent Agent"]
+    LG --> M["Market Agent"]
+    
+    C --> Exec["Executive Summary"]
+    L --> Exec
+    P --> Exec
+    M --> Exec
+    
+    Exec --> Score["Opportunity Score"]
+    Score --> Report["Structured Research Report"]
+    Report --> Exports["PDF & JSON Export"]
+```
+
 ---
 
 ## 🔄 Authentication & Request Lifecycle
@@ -127,6 +152,23 @@ sequenceDiagram
         FastAPI->>Redis: Store Result (24h TTL)
         FastAPI-->>React: Stream SSE Events & Final ResearchContext
     end
+```
+
+---
+
+## ☁️ Deployment & Production Workflow
+
+```mermaid
+graph LR
+    Dev["Developer"] --> GitHub["GitHub Repository"]
+    GitHub --> Vercel["Vercel (Frontend Deployment)"]
+    GitHub --> Render["Render (FastAPI Backend)"]
+    
+    Vercel --> Users["End Users"]
+    Render --> Supabase["Supabase PostgreSQL"]
+    Render --> Upstash["Upstash Redis Cache"]
+    Render --> OAuth["Google OAuth 2.0"]
+    Render --> LLM["Gemini AI Agents"]
 ```
 
 ---
