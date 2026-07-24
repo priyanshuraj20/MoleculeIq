@@ -113,29 +113,48 @@ Q --> R["PDF Export"]
 Q --> S["JSON Export"]
 ```
 
-### 🧠 AI Research Pipeline Workflow
+### 🧠 AI Research Pipeline
 
 ```mermaid
 flowchart LR
-    Query["Research Query"] --> API["FastAPI"]
-    API --> Redis{"Redis Cache"}
-    
-    Redis -->|Cache Hit| Return["Cached Report"]
-    Redis -->|Cache Miss| LG["LangGraph Pipeline"]
-    
-    LG --> C["Clinical Agent"]
-    LG --> L["Literature Agent"]
-    LG --> P["Patent Agent"]
-    LG --> M["Market Agent"]
-    
-    C --> Exec["Executive Summary"]
-    L --> Exec
-    P --> Exec
-    M --> Exec
-    
-    Exec --> Score["Opportunity Score"]
-    Score --> Report["Structured Research Report"]
-    Report --> Exports["PDF & JSON Export"]
+
+A[Research Query]
+
+A --> B[FastAPI]
+
+B --> C[Redis Cache]
+
+C --> D{Cache Hit?}
+
+D -->|Yes| E[Return Cached Report]
+
+D -->|No| F[LangGraph Workflow]
+
+F --> G[Clinical Trial Agent]
+
+F --> H[Literature Agent]
+
+F --> I[Patent Agent]
+
+F --> J[Market Intelligence Agent]
+
+G --> K[Executive Summary]
+
+H --> K
+
+I --> K
+
+J --> K
+
+K --> L[Opportunity Score]
+
+L --> M[Structured Research Report]
+
+M --> N[Frontend]
+
+N --> O[PDF Export]
+
+N --> P[JSON Export]
 ```
 
 ---
