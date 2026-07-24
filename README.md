@@ -1,187 +1,273 @@
-# MoleculeIQ — Agentic AI Platform for Pharmaceutical Innovation Discovery
+<div align="center">
 
-> **End-to-End AI System for Molecule Assessment, Market Research, Patent Landscape Analysis, and Drug Repurposing Reports.**
+# 🧬 MoleculeIQ
 
----
+### AI-Powered Pharmaceutical Research Intelligence Platform
 
-## 🚀 Project Overview
+*Accelerating pharmaceutical innovation through autonomous AI research agents.*
 
-**MoleculeIQ** is an agentic AI platform engineered for pharmaceutical innovation discovery and drug repurposing. It automatically orchestrates specialized research agents across clinical trial registries, scientific literature, market intelligence databases, and patent landscapes to evaluate any pharmaceutical compound in seconds.
-
-Rather than manually searching fragmented databases, MoleculeIQ synthesizes multi-domain evidence into a weighted **Commercial Opportunity Score (0–100)**, structured C-suite executive summaries, downloadable PDF reports, and standardized JSON exports.
-
----
-
-## ✨ Features
-
-- **Multi-Agent Orchestration**: LangGraph-powered orchestrator coordinating 4 specialized domain agents in parallel.
-- **Upstash Redis Caching**: Configurable TTL cloud Redis caching layer over TLS with `moleculeiq:` key prefix (`moleculeiq:report:{canonical_molecule}`).
-- **Dynamic Synonym & Brand Resolution**: Resolves brand names (e.g. `Ozempic` → `Semaglutide`, `Keytruda` → `Pembrolizumab`, `Mounjaro` → `Tirzepatide`) with PubChem PUG-REST dynamic fallback lookup.
-- **Molecule Comparison Mode**: Parallel comparative evaluation for competing drug queries (e.g., `Metformin vs Semaglutide` or `Pembrolizumab vs Nivolumab`).
-- **Four-Domain Intelligence**:
-  - 🩺 **Clinical Evidence Agent**: ClinicalTrials.gov API v2 study phase, recruitment status, and sponsor tracking.
-  - 📚 **Scientific Literature Agent**: Europe PMC publication volume and highly cited research paper analysis.
-  - 📊 **Market Intelligence Agent**: Addressable market size (USD Mn), 5-year CAGR growth rate, and regional competitor footprints.
-  - 🛡️ **Patent Landscape Agent**: Active patent filings, expiration horizons, and Freedom-To-Operate (FTO) indicators.
-- **Hybrid Scoring Engine**: Multi-domain weighted scoring algorithm computing 0–100 commercial viability and data confidence ratings.
-- **Real-Time Progress Streaming**: Server-Sent Events (SSE) streaming live agent checkmarks (`✓ Clinical Analysis Complete`, etc.) directly to the user interface.
-- **C-Suite PDF & Structured JSON Export**: Production-grade C-suite PDF rendering and downstream API JSON exports.
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Agentic_AI-FF6F00?style=flat-square)](https://langchain-ai.github.io/langgraph/)
+[![Upstash Redis](https://img.shields.io/badge/Upstash_Redis-Caching-00E676?style=flat-square&logo=redis&logoColor=white)](https://upstash.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Google OAuth](https://img.shields.io/badge/Google_OAuth-2.0-4285F4?style=flat-square&logo=google&logoColor=white)](https://developers.google.com/identity)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 ---
 
-## 🛠️ Tech Stack
+<p align="center">
+  <b>MoleculeIQ</b> orchestrates specialized AI research agents across clinical trial registries, scientific literature, patent databases, and market intelligence to generate publication-grade executive drug repurposing reports in seconds.
+</p>
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18 (Vercel), Vite, JavaScript (ES6+), Vanilla CSS / Tailwind CSS, Lucide Icons |
-| **Backend** | Python 3.11+, FastAPI (Render), Uvicorn, LangGraph, Pydantic, HTTPX, ReportLab |
-| **Caching & DB** | Upstash Redis (24h TTL, TLS), Supabase (PostgreSQL) + Local Repository Fallbacks |
-| **Integrations** | ClinicalTrials.gov API v2, Europe PMC REST API, PubChem PUG-REST API |
-| **Streaming** | Server-Sent Events (SSE) for real-time progress updates |
+</div>
+
+---
+
+## 🎯 Project Overview
+
+Traditional pharmaceutical research requires manually searching fragmented databases across clinical trials, scientific literature, patent offices, and financial markets. **MoleculeIQ** unifies these workflows by deploying 4 autonomous AI agents that analyze pharmaceutical compounds in parallel and synthesize multi-domain evidence into a deterministic **Commercial Opportunity Score (0–100)**, C-suite executive summaries, PDF exports, and structured JSON reports.
+
+---
+
+## ✨ Key Features
+
+### 🤖 Autonomous Multi-Agent Intelligence
+- **Clinical Evidence Agent**: Queries ClinicalTrials.gov API v2 for study phases, recruitment status, and active trials.
+- **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers.
+- **Patent Landscape Agent**: Reviews active patent filings, expiration horizons, and Freedom-To-Operate (FTO) indicators.
+- **Market Intelligence Agent**: Calculates addressable market size (USD Mn), 5-year CAGR growth rate, and regional footprint.
+- **Executive Synthesis & Scoring Agent**: Synthesizes cross-domain findings into a weighted 0–100 Commercial Opportunity Score and executive summary.
+
+### ⚡ Production-Grade Performance
+- **Upstash Redis Caching**: Cloud Redis caching with 24-hour TTL (`moleculeiq:report:{compound}`) for instant cache hits.
+- **Real-Time Progress Streaming**: Server-Sent Events (SSE) streaming live status updates (`✓ Verified Clinical Analysis`, etc.).
+- **Drug & Brand Synonym Resolution**: Auto-resolves brand names (e.g., `Ozempic` → `Semaglutide`, `Keytruda` → `Pembrolizumab`).
+- **Molecule Comparison Mode**: Side-by-side comparative analysis for competing drugs (e.g., `Metformin vs Semaglutide`).
+
+### 🔐 Enterprise Security & Export
+- **Google OAuth 2.0 & Custom JWT**: Identity verification via Google OAuth and secure backend JWT issued in HttpOnly cookies.
+- **Stateless Architecture**: Zero report data persistence in the database; user downloads structured PDF or JSON exports on demand.
 
 ---
 
 ## 🏗️ System Architecture
 
-```
-                 React (Vercel)
-                        │
-                        ▼
-              FastAPI (Render)
-                        │
-                 ResearchService
-                        │
-                  CacheService
-                        │
-                  Upstash Redis
-                        │
-             ┌──────────┴──────────┐
-             │                     │
-        Cache HIT            Cache MISS
-             │                     │
-      Return JSON          LangGraph Pipeline
-                                  │
-       ┌───────────────┬───────────────┼───────────────┐
-       │               │               │               │
- Clinical Agent   Patent Agent   Literature Agent Market Agent
-                                  │
-                          Executive Summary
-                                  │
-                          Opportunity Score
-                                  │
-                          Final JSON Report
-                                  │
-                        Save to Redis (24h TTL)
-                                  │
-                          Return Response
+```mermaid
+graph TD
+    User["React + Vite Frontend"] --> OAuth["Google OAuth 2.0"]
+    OAuth --> Backend["FastAPI Backend"]
+    Backend --> Auth["JWT Verification & HttpOnly Cookie"]
+    Auth --> DB["Supabase PostgreSQL (Users Table Only)"]
+    Auth --> Service["Research Service"]
+    
+    Service --> Cache["Upstash Redis Cache"]
+    Cache -->|Cache Hit| ReturnCached["Return Cached Report Immediately"]
+    Cache -->|Cache Miss| Graph["LangGraph Multi-Agent Pipeline"]
+    
+    Graph --> Agent1["🩺 Clinical Agent"]
+    Graph --> Agent2["📚 Literature Agent"]
+    Graph --> Agent3["🛡️ Patent Agent"]
+    Graph --> Agent4["📊 Market Agent"]
+    
+    Agent1 --> Exec["Executive Summary Synthesizer"]
+    Agent2 --> Exec
+    Agent3 --> Exec
+    Agent4 --> Exec
+    
+    Exec --> Score["Opportunity Score Engine (0-100)"]
+    Score --> Output["Frontend Research Dashboard"]
+    Output --> PDF["📄 C-Suite PDF Export"]
+    Output --> JSON["📦 API JSON Export"]
 ```
 
 ---
 
-## ⚙️ Installation & Running Locally
+## 🔄 Authentication & Request Lifecycle
 
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **Python**: v3.11 or higher
-- **pip**: v23.0+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant React as React Frontend
+    participant Google as Google OAuth 2.0
+    participant FastAPI as FastAPI Backend
+    participant Supabase as Supabase PostgreSQL
+    participant Redis as Upstash Redis
 
-### 2. Backend Setup
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment (Windows PowerShell)
-.\venv\Scripts\Activate.ps1
-# (Linux/macOS)
-# source venv/bin/activate
-
-# Upgrade pip and install dependencies
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+    User->>React: Click "Continue with Google"
+    React->>Google: Open OAuth Popup
+    Google-->>React: Return Google ID Token (Credential)
+    React->>FastAPI: POST /api/auth/google
+    FastAPI->>Google: Verify ID Token Signature
+    FastAPI->>Supabase: Get or Insert User (Update last_login_at)
+    Supabase-->>FastAPI: Return User Profile Record
+    FastAPI-->>React: Set HttpOnly Cookie & Return Custom JWT
+    
+    User->>React: Submit Compound Query (e.g., "Semaglutide")
+    React->>FastAPI: GET /api/v1/research/stream (Bearer JWT / Cookie)
+    FastAPI->>Redis: Check Cache (moleculeiq:report:semaglutide)
+    alt Cache Hit
+        Redis-->>FastAPI: Return Cached ResearchContext
+        FastAPI-->>React: Stream Final Event
+    else Cache Miss
+        FastAPI->>FastAPI: Execute LangGraph 4-Agent Pipeline
+        FastAPI->>Redis: Store Result (24h TTL)
+        FastAPI-->>React: Stream SSE Events & Final ResearchContext
+    end
 ```
-
-### 3. Environment Variables (`backend/.env`)
-Copy `.env.example` to `.env` or set environment variables:
-```env
-REDIS_URL=rediss://default:your-upstash-token@your-instance.upstash.io:6379
-REDIS_TTL_SECONDS=86400
-SUPABASE_URL=https://your-supabase-project.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000
-```
-
-### 4. Run Backend Server
-```bash
-uvicorn app.main:app --reload --port 8000 --app-dir src
-```
-The API backend will start at `http://127.0.0.1:8000`.
-
-### 5. Frontend Setup & Launch
-```bash
-# Open a new terminal and navigate to frontend directory
-cd frontend
-
-# Install Node dependencies
-npm install
-
-# Build for production verification
-npm run build
-
-# Start Vite development server
-npm run dev
-```
-Access the application UI in your browser at `http://localhost:5173`.
 
 ---
 
-## 📁 Project Structure
+## ⚙️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, JavaScript (ES6+), Tailwind CSS, Lucide Icons |
+| **Backend** | Python 3.11+, FastAPI, Uvicorn, LangGraph, Pydantic, ReportLab |
+| **Authentication** | Google OAuth 2.0, PyJWT, HttpOnly Cookies |
+| **Database** | Supabase PostgreSQL (`users` table only) |
+| **Caching** | Upstash Redis (24h TTL, TLS) |
+| **Data Sources** | ClinicalTrials.gov API v2, Europe PMC REST API, PubChem PUG-REST API |
+| **Streaming** | Server-Sent Events (SSE) |
+
+---
+
+## 📂 Project Structure
 
 ```
 MoleculeIQ/
 ├── backend/
+│   ├── scripts/
+│   │   └── create_users_table.sql      # Supabase PostgreSQL schema script
 │   ├── src/
 │   │   └── app/
-│   │       ├── agents/             # Worker agents (clinical, literature, market, patent)
-│   │       ├── api/                # FastAPI endpoints & SSE stream handlers
-│   │       ├── core/               # App configuration & settings
-│   │       ├── domain/             # Typed Pydantic & dataclass domain models
-│   │       ├── infrastructure/     # Upstash Redis client, API clients & Supabase repos
-│   │       ├── orchestrator/       # LangGraph research graph & node definitions
-│   │       └── services/           # CacheService, Scoring, Aggregation, Synonym & PDF services
-│   └── scripts/                    # Verification & automated testing scripts
+│   │       ├── agents/                 # Clinical, Literature, Market & Patent agents
+│   │       ├── api/                    # REST routes (/research, /auth, /stream)
+│   │       ├── auth/                   # JWT, Google OAuth service & dependencies
+│   │       ├── core/                   # System settings & configuration
+│   │       ├── domain/                 # Pydantic & Dataclass domain entities
+│   │       ├── infrastructure/         # Supabase client, Redis cache & API clients
+│   │       ├── orchestrator/           # LangGraph research graph definition
+│   │       └── services/               # Aggregation, Scoring, PDF & JSON services
+│   └── main.py
 └── frontend/
     ├── src/
-    │   ├── components/             # Minimal UI components & custom logos
-    │   ├── hooks/                  # Custom React hooks (useResearch)
-    │   ├── pages/                  # LandingPage & ResearchPage views
-    │   └── services/               # API & SSE client integration
+    │   ├── auth/                       # AuthContext, GoogleLoginButton & ProtectedRoute
+    │   ├── components/                 # UI cards, logo & navigation components
+    │   ├── pages/                      # LandingPage, ResearchPage & ReportPage
+    │   └── services/                   # SSE stream & API fetch services
     └── package.json
 ```
 
 ---
 
-## 🧪 Verification & Testing
+## 🔑 Environment Variables
 
-To verify Upstash Redis caching, data quality, and multi-agent execution:
-```bash
-cd backend
-# Test Upstash Redis caching & canonical key resolution
-python scripts/verify_redis_cache.py
+### Backend (`backend/.env`)
+```env
+APP_NAME=MoleculeIQ API
+APP_ENV=development
+DEBUG=True
+PORT=8000
+HOST=0.0.0.0
 
-# Test Molecule Comparison Mode
-python scripts/verify_comparison.py
+# CORS
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# Test multi-molecule pipeline data quality
-python scripts/verify_real_molecules.py
+# Authentication & Security
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+JWT_SECRET_KEY=your-production-super-secret-jwt-key
+JWT_EXPIRE_MINUTES=10080
+
+# Database & Cache
+SUPABASE_URL=https://your-supabase-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+REDIS_URL=rediss://default:your-upstash-token@your-instance.upstash.io:6379
+REDIS_TTL_SECONDS=86400
+```
+
+### Frontend (`frontend/.env`)
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
 ---
 
-## 🔮 Future Improvements
+## 🚀 Getting Started
 
-- Expanded multi-language literature indexing.
-- Direct chemical structure SMILES / MOL file parsing.
-- Advanced target binding affinity scoring integrations.
+### 1. Backend Setup
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create and activate Python virtual environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1  # Windows
+# source venv/bin/activate    # Linux/macOS
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run FastAPI server
+uvicorn app.main:app --reload --port 8000 --app-dir src
+```
+
+### 2. Database Setup
+Run the SQL script located in `backend/scripts/create_users_table.sql` in your [Supabase SQL Editor](https://supabase.com/dashboard):
+
+```sql
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    google_id TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    picture TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    last_login_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all operations for anon" ON public.users FOR ALL TO public USING (true) WITH CHECK (true);
+```
+
+### 3. Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite dev server
+npm run dev
+```
+
+Visit `http://localhost:5173` in your browser.
+
+---
+
+## 🌐 API Overview
+
+| Method | Endpoint | Protection | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/google` | Public | Authenticates Google ID Token & returns app JWT + HttpOnly cookie |
+| `GET` | `/api/auth/me` | JWT | Returns current authenticated user profile |
+| `POST` | `/api/auth/logout` | Public | Clears access_token HttpOnly cookie |
+| `POST` | `/api/research` | JWT | Executes full research pipeline for a compound |
+| `GET` | `/api/v1/research/stream` | JWT | SSE stream endpoint for real-time pipeline events |
+| `POST` | `/api/research/json` | JWT | Generates downloadable JSON research export |
+| `GET` | `/api/research/pdf` | JWT | Synthesizes C-suite Executive PDF report |
+| `GET` | `/health` | Public | Health check endpoint |
+
+---
+
+## 📄 License & Credits
+
+This project is licensed under the **MIT License**.
+
+Developed with ❤️ by **Priyanshu Raj** for Pharmaceutical Innovation Discovery.
