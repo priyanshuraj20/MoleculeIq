@@ -67,94 +67,51 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 
 ```mermaid
 graph TD
-
-A["React + Vite"]
-
-A --> B["Google OAuth"]
-
-B --> C["FastAPI Backend"]
-
-C --> D["JWT Authentication"]
-
-D --> E["Supabase PostgreSQL"]
-
-D --> F["Research Service"]
-
-F --> G["Redis Cache"]
-
-G --> H{"Cache Hit?"}
-
-H -->|Yes| I["Return Cached Report"]
-
-H -->|No| J["LangGraph"]
-
-J --> K["Clinical Agent"]
-
-J --> L["Literature Agent"]
-
-J --> M["Patent Agent"]
-
-J --> N["Market Agent"]
-
-K --> O["Executive Summary"]
-
-L --> O
-
-M --> O
-
-N --> O
-
-O --> P["Opportunity Score"]
-
-P --> Q["Frontend"]
-
-Q --> R["PDF Export"]
-
-Q --> S["JSON Export"]
+    A["React + Vite"] --> B["Google OAuth"]
+    B --> C["FastAPI Backend"]
+    C --> D["JWT Authentication"]
+    D --> E["Supabase PostgreSQL"]
+    D --> F["Research Service"]
+    F --> G["Redis Cache"]
+    G --> H{"Cache Hit?"}
+    H -->|Yes| I["Return Cached Report"]
+    H -->|No| J["LangGraph"]
+    J --> K["Clinical Agent"]
+    J --> L["Literature Agent"]
+    J --> M["Patent Agent"]
+    J --> N["Market Agent"]
+    K --> O["Executive Summary"]
+    L --> O
+    M --> O
+    N --> O
+    O --> P["Opportunity Score"]
+    P --> Q["Frontend"]
+    Q --> R["PDF Export"]
+    Q --> S["JSON Export"]
 ```
 
 ### 🧠 AI Research Pipeline
 
 ```mermaid
 flowchart LR
-
-A[Research Query]
-
-A --> B[FastAPI]
-
-B --> C[Redis Cache]
-
-C --> D{Cache Hit?}
-
-D -->|Yes| E[Return Cached Report]
-
-D -->|No| F[LangGraph Workflow]
-
-F --> G[Clinical Trial Agent]
-
-F --> H[Literature Agent]
-
-F --> I[Patent Agent]
-
-F --> J[Market Intelligence Agent]
-
-G --> K[Executive Summary]
-
-H --> K
-
-I --> K
-
-J --> K
-
-K --> L[Opportunity Score]
-
-L --> M[Structured Research Report]
-
-M --> N[Frontend]
-
-N --> O[PDF Export]
-
-N --> P[JSON Export]
+    A["Research Query"] --> B["FastAPI"]
+    B --> C["Redis Cache"]
+    C --> D{"Cache Hit?"}
+    D -->|Yes| E["Return Cached Report"]
+    D -->|No| F["LangGraph Workflow"]
+    F --> G["Clinical Trial Agent"]
+    F --> H["Literature Agent"]
+    F --> I["Patent Agent"]
+    F --> J["Market Intelligence Agent"]
+    G --> K["Executive Summary"]
+    H --> K
+    I --> K
+    J --> K
+    K --> L["Opportunity Score"]
+    L --> M["Structured Research Report"]
+    M --> N["Frontend"]
+    N --> O["PDF Export"]
+    N --> P["JSON Export"]
 ```
 
 ---
@@ -179,7 +136,7 @@ sequenceDiagram
     FastAPI->>Supabase: Get or Insert User (Update last_login_at)
     Supabase-->>FastAPI: Return User Profile Record
     FastAPI-->>React: Set HttpOnly Cookie & Return Custom JWT
-    
+
     User->>React: Submit Compound Query (e.g., "Semaglutide")
     React->>FastAPI: GET /api/v1/research/stream (Bearer JWT / Cookie)
     FastAPI->>Redis: Check Cache (moleculeiq:report:semaglutide)
@@ -202,7 +159,6 @@ graph LR
     Dev["Developer"] --> GitHub["GitHub Repository"]
     GitHub --> Vercel["Vercel (Frontend Deployment)"]
     GitHub --> Render["Render (FastAPI Backend)"]
-    
     Vercel --> Users["End Users"]
     Render --> Supabase["Supabase PostgreSQL"]
     Render --> Upstash["Upstash Redis Cache"]
