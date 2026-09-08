@@ -2,19 +2,19 @@
 
 ### AI-Powered Pharmaceutical Research Intelligence Platform
 
-MoleculeIQ orchestrates specialized AI research agents across clinical trial registries, scientific literature, patent databases, and market intelligence to generate executive-grade drug repurposing reports in seconds.
+MoleculeIQ orchestrates specialized research agents across clinical trial registries, scientific literature, patent databases, and market intelligence to generate executive-grade drug repurposing reports in seconds.
 
 ## Project Overview
 
-Traditional pharmaceutical research requires manually searching fragmented databases across clinical trials, scientific literature, patent offices, and financial markets. MoleculeIQ unifies these workflows by deploying 4 autonomous AI agents that analyze pharmaceutical compounds in parallel and synthesize multi-domain evidence into a deterministic Commercial Opportunity Score (0–100), executive summaries, PDF exports, and structured JSON reports.
+Traditional pharmaceutical research requires manually searching fragmented databases across clinical trials, scientific literature, patent offices, and financial markets. MoleculeIQ unifies these workflows by deploying 4 autonomous agents that analyze pharmaceutical compounds in parallel and synthesize multi-domain evidence into a deterministic Commercial Opportunity Score (0–100), executive summaries, PDF exports, and structured JSON reports.
 
 ## Key Features
 
 ### Autonomous Multi-Agent Intelligence
 - **Clinical Evidence Agent**: Queries ClinicalTrials.gov API v2 for study phases, recruitment status, and active trials
 - **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers
-- **Patent Landscape Agent**: Reviews active patent filings, expiration horizons, and Freedom-To-Operate (FTO) indicators
-- **Market Intelligence Agent**: Calculates addressable market size (USD Mn), 5-year CAGR growth rate, and regional footprint
+- **Patent Landscape Agent**: Reviews active patent filings
+- **Market Intelligence Agent**: Calculates addressable market size, 5-year CAGR growth rate
 - **Executive Synthesis & Scoring Agent**: Synthesizes cross-domain findings into a weighted 0–100 Commercial Opportunity Score and executive summary
 
 ### Performance
@@ -110,26 +110,11 @@ sequenceDiagram
     end
 ```
 
-## Deployment Workflow
-
-```mermaid
-graph LR
-    Dev["Developer"] --> GitHub["GitHub Repository"]
-    GitHub --> Vercel["Vercel (Frontend Deployment)"]
-    GitHub --> Render["Render (FastAPI Backend)"]
-    Vercel --> Users["End Users"]
-    Render --> Supabase["Supabase PostgreSQL"]
-    Render --> Upstash["Upstash Redis Cache"]
-    Render --> OAuth["Google OAuth 2.0"]
-    Render --> LLM["Gemini AI Agents"]
-```
-
 ## Technology Stack
 
 | Layer | Technologies |
 |---|---|
-| Frontend | React 18, Vite, JavaScript (ES6+), Tailwind CSS, Lucide Icons |
-| Backend | Python 3.11+, FastAPI, Uvicorn, LangGraph, Pydantic, ReportLab |
+| Backend | Python, FastAPI, Uvicorn, LangGraph, Pydantic, ReportLab |
 | Authentication | Google OAuth 2.0, PyJWT, HttpOnly Cookies |
 | Database | Supabase PostgreSQL (`users` table only) |
 | Caching | Upstash Redis (24h TTL, TLS) |
