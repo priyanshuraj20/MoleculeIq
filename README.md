@@ -20,8 +20,6 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 ### Performance
 - **Redis Caching**: Upstash Redis caching with 24-hour TTL (`moleculeiq:report:{compound}`) for instant cache hits
 - **Real-Time Progress Streaming**: Server-Sent Events (SSE) streaming live status updates during pipeline execution
-- **Drug & Brand Synonym Resolution**: Auto-resolves brand names (e.g., `Ozempic` → `Semaglutide`, `Keytruda` → `Pembrolizumab`)
-- **Molecule Comparison Mode**: Side-by-side comparative analysis for competing drugs (e.g., `Metformin vs Semaglutide`)
 
 ### Security & Export
 - **Google OAuth 2.0 & Custom JWT**: Identity verification via Google OAuth and a backend-issued JWT set in an HttpOnly cookie
