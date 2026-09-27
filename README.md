@@ -15,7 +15,7 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 - **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers
 - **Patent Landscape Agent**: Reviews active patent filings
 - **Market Intelligence Agent**: Calculates addressable market size, 5-year CAGR growth rate
-- **Executive Synthesis & Scoring Agent**: Synthesizes cross-domain findings into a weighted 0–100 Commercial Opportunity Score and executive summary
+
 
 ### Performance
 - **Redis Caching**: Upstash Redis caching with 24-hour TTL (`moleculeiq:report:{compound}`) for instant cache hits
