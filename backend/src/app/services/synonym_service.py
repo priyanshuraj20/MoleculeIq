@@ -66,6 +66,50 @@ KNOWN_BRAND_MAPPINGS = {
     "aricept": "Donepezil",
 }
 
+# Common non-pharmaceutical substances, solvents, placebos, excipients & non-drug entities
+NON_PHARMACEUTICAL_SUBSTANCES = {
+    # Water, simple solvents & hydration
+    "water", "h2o", "h20", "drinking water", "tap water", "mineral water", "sterile water",
+    "aqua", "dihydrogen monoxide", "distilled water", "saline", "normal saline",
+    
+    # Common atmospheric gases & elements
+    "air", "oxygen", "nitrogen", "co2", "carbon dioxide", "hydrogen",
+    
+    # Common household food items, sugars & table condiments
+    "sugar", "table salt", "salt", "sucrose", "fructose", "lactose",
+    "food", "diet", "meal", "nutrition", "fasting", "fast",
+    "tea", "coffee", "milk", "juice", "soda", "wine", "beer", "liquor",
+    
+    # Clinical trial controls, placebos & excipients
+    "placebo", "vehicle", "control", "sham", "blank", "excipient",
+    
+    # Lifestyle & behavioral interventions
+    "exercise", "walking", "running", "yoga", "meditation", "sleep", "sunlight",
+    
+    # Biological fluids & physical specimens
+    "blood", "urine", "saliva", "stool", "feces", "semen", "sweat",
+    "dirt", "soil", "dust", "smoke", "rock", "sand", "wood", "glass", "paper", "plastic"
+}
+
+
+def is_non_pharmaceutical(query_name: str) -> tuple[bool, Optional[str]]:
+    """
+    Checks if a query or any component of a comparison query represents a non-pharmaceutical substance.
+    Returns (is_invalid, error_message).
+    """
+    if not query_name or not query_name.strip():
+        return False, None
+
+    cleaned_lower = query_name.strip().lower()
+    tokens = [p.strip() for p in cleaned_lower.replace(" vs. ", " vs ").split(" vs ")]
+    for token in tokens:
+        if token in NON_PHARMACEUTICAL_SUBSTANCES:
+            return True, (
+                f"'{token.capitalize()}' is a common non-pharmaceutical substance/solvent, not an active pharmaceutical ingredient "
+                "or therapeutic drug candidate. Please search for an active pharmaceutical molecule (e.g. Metformin, Semaglutide, Pembrolizumab)."
+            )
+    return False, None
+
 
 @dataclass
 class SynonymResult:

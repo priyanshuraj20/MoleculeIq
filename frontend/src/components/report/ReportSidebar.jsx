@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   CheckCircle2,
+  Compass,
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -17,6 +18,7 @@ const SECTIONS = [
   { id: 'scientific',    label: 'Scientific Literature',   icon: BookOpen },
   { id: 'market',        label: 'Market Intelligence',     icon: TrendingUp },
   { id: 'patent',        label: 'Patent Landscape',        icon: ShieldCheck },
+  { id: 'repurposing',   label: 'Repurposing Candidates',  icon: Compass },
   { id: 'risks',         label: 'Risk Assessment',         icon: AlertTriangle },
   { id: 'recommendation',label: 'Final Recommendation',    icon: CheckCircle2 },
 ];

@@ -18,6 +18,7 @@ import ReportToolbar          from '../components/report/ReportToolbar';
 import ReportMetadataCard     from '../components/report/ReportMetadataCard';
 import ReportSidebar          from '../components/report/ReportSidebar';
 import ReportSectionCard       from '../components/report/ReportSectionCard';
+import RepurposingCard          from '../components/dashboard/RepurposingCard';
 import ReportToast            from '../components/report/ReportToast';
 import ErrorCard              from '../components/dashboard/ErrorCard';
 
@@ -275,6 +276,13 @@ export default function ReportPage() {
                   icon={ShieldCheck}
                   content={report.patent_analysis}
                 />
+
+                <div id="repurposing" className="scroll-mt-36">
+                  <RepurposingCard
+                    repurposing={data?.repurposing}
+                    isLoading={isLoading}
+                  />
+                </div>
 
                 <ReportSectionCard
                   id="risks"

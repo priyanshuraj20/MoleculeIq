@@ -16,6 +16,7 @@ from app.orchestrator.nodes import (
     literature_node,
     market_node,
     patent_node,
+    repurposing_node,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,13 +52,15 @@ def build_research_graph():
     builder.add_node("literature_node", literature_node)
     builder.add_node("market_node",     market_node)
     builder.add_node("patent_node",     patent_node)
+    builder.add_node("repurposing_node", repurposing_node)
 
     # 3. Add sequential execution edges
     builder.add_edge(START,             "clinical_node")
     builder.add_edge("clinical_node",   "literature_node")
     builder.add_edge("literature_node", "market_node")
     builder.add_edge("market_node",     "patent_node")
-    builder.add_edge("patent_node",     END)
+    builder.add_edge("patent_node",     "repurposing_node")
+    builder.add_edge("repurposing_node", END)
 
     # 4. Compile graph
     compiled_graph = builder.compile()

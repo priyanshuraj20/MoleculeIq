@@ -69,7 +69,10 @@ class PatentRepository:
             domain.patents.append(self._map_row(row))
 
         if domain.patents:
+            domain.provenance = "simulated"
             logger.info("PatentRepository: loaded %d fallback records for '%s'", len(domain.patents), molecule_name)
+        else:
+            domain.provenance = "unavailable"
 
         return domain
 

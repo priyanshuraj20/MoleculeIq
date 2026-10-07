@@ -56,6 +56,7 @@ class MarketAgent:
 
             # 2. Check if repository returned empty result
             if market_domain.is_empty:
+                market_domain.provenance = "unavailable"
                 warn_msg = f"No market sales data found in database for '{molecule_name}'"
                 logger.warning("[MarketAgent] %s (took %.2fs)", warn_msg, elapsed)
                 state.warnings.append(warn_msg)
@@ -75,7 +76,7 @@ class MarketAgent:
             elapsed = round(time.monotonic() - start_time, 2)
             warn_msg = f"MarketAgent encountered unexpected failure for '{molecule_name}': {str(exc)}"
             logger.error("[MarketAgent] %s (after %.2fs)", warn_msg, elapsed)
-            state.market = MarketInsightsDomain(molecule_name=molecule_name)
+            state.market = MarketInsightsDomain(molecule_name=molecule_name, provenance="unavailable")
             state.warnings.append(warn_msg)
 
         return state

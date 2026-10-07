@@ -87,6 +87,15 @@ async def execute_research_pipeline(payload: ResearchRequest, current_user: dict
     start_time = time.monotonic()
     logger.info("[API: POST /api/research] Request received for '%s'", query_name)
 
+    # 0. Check for non-pharmaceutical substances (e.g. water, h2o, air, etc.)
+    from app.services.synonym_service import is_non_pharmaceutical
+    is_invalid, error_msg = is_non_pharmaceutical(query_name)
+    if is_invalid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg
+        )
+
     # 1. Check Upstash Redis Cache
     try:
         cached_res = await _cache_service.get_report(query_name)
@@ -193,6 +202,10 @@ async def export_research_json(payload: ResearchRequest, current_user: dict = De
     from app.services.json_service import JSONReportService
     start_time = time.monotonic()
     query_name = payload.molecule_name
+    from app.services.synonym_service import is_non_pharmaceutical
+    is_invalid, error_msg = is_non_pharmaceutical(query_name)
+    if is_invalid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
     agent_state = await run_research_pipeline(query_name)
     research_context = _agg_service.build_context(agent_state)
@@ -236,6 +249,11 @@ async def download_research_pdf(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="molecule_name query parameter cannot be empty or whitespace."
         )
+
+    from app.services.synonym_service import is_non_pharmaceutical
+    is_invalid, error_msg = is_non_pharmaceutical(cleaned_name)
+    if is_invalid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
     start_time = time.monotonic()
     logger.info("[API: GET /api/research/pdf] PDF request received for molecule '%s'", cleaned_name)

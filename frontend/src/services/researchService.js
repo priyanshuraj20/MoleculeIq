@@ -17,6 +17,8 @@ export const SSE_STATUS_MESSAGES = {
   market_completed:      'Market intelligence gathered.',
   patent_started:        'Reviewing patent landscape…',
   patent_completed:      'Patent landscape reviewed.',
+  repurposing_started:   'Discovering drug repurposing opportunities…',
+  repurposing_completed: 'Drug repurposing indications identified.',
   aggregation_completed: 'Aggregating research domains…',
   scoring_completed:     'Calculating opportunity score…',
   research_completed:    'Research complete.',
@@ -53,6 +55,8 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     'market_completed',
     'patent_started',
     'patent_completed',
+    'repurposing_started',
+    'repurposing_completed',
     'aggregation_completed',
     'scoring_completed',
   ];

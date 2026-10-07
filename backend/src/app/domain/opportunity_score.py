@@ -41,3 +41,6 @@ class OpportunityScore:
         "patent": 25.0,
         "literature": 20.0
     })
+    real_sources_count:   int = 2
+    total_sources_count:  int = 4
+    data_sources_summary: str = "Based on 2 of 4 data sources"

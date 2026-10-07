@@ -19,7 +19,7 @@ Zero AI reasoning. Zero LLM calls. 100% reproducible and auditable.
 
 import logging
 import time
-from typing import Tuple
+from typing import Tuple, Optional, Dict, Any
 
 from app.domain.opportunity_score import OpportunityScore, ScoreBreakdown
 from app.domain.research_context import ResearchContext
@@ -69,27 +69,60 @@ class ScoringService:
         research_score, lit_factors, l_expl = self._score_literature(context)
         explanations.extend(l_expl)
 
-        # 5. Compute Overall Score
-        overall_score = round(
-            (0.30 * market_score) +
-            (0.25 * clinical_score) +
-            (0.25 * patent_score) +
-            (0.20 * research_score),
-            1
-        )
+        # 5. Honest Provenance-Aware Weighted Scoring
+        # Determine provenance for each domain
+        provenance_map = {
+            "market": getattr(context.market, "provenance", "unavailable") if context.market else "unavailable",
+            "clinical": getattr(context.clinical, "provenance", "unavailable") if context.clinical else "unavailable",
+            "patent": getattr(context.patent, "provenance", "unavailable") if context.patent else "unavailable",
+            "literature": getattr(context.literature, "provenance", "unavailable") if context.literature else "unavailable",
+        }
+
+        base_weights = {
+            "market": 30.0,
+            "clinical": 25.0,
+            "patent": 25.0,
+            "literature": 20.0,
+        }
+
+        sub_scores = {
+            "market": market_score,
+            "clinical": clinical_score,
+            "patent": patent_score,
+            "literature": research_score,
+        }
+
+        # Filter to domains with verified 'real' provenance
+        real_domains = [d for d, prov in provenance_map.items() if prov == "real"]
+        real_sources_count = len(real_domains)
+        total_sources_count = 4
+
+        # Renormalize weights among real components only
+        renormalized_weights = {}
+        if real_domains:
+            total_real_weight = sum(base_weights[d] for d in real_domains)
+            for d in real_domains:
+                renormalized_weights[d] = round((base_weights[d] / total_real_weight) * 100.0, 1)
+            overall_score = round(
+                sum(sub_scores[d] * (base_weights[d] / total_real_weight) for d in real_domains),
+                1
+            )
+        else:
+            overall_score = 0.0
+
+        for d, prov in provenance_map.items():
+            if prov != "real":
+                renormalized_weights[d] = 0.0
+                explanations.append(
+                    f"Scoring Provenance: Excluded {d} sub-score ({sub_scores[d]:.1f}) from Opportunity Score "
+                    f"due to '{prov}' provenance (non-real data excluded from commercial score)."
+                )
+
+        data_sources_summary = f"Based on {real_sources_count} of {total_sources_count} data sources"
+
         # 6. Compute Confidence Score
         confidence_score, confidence_factors, conf_expl = self._score_confidence(context)
         explanations.extend(conf_expl)
-
-        # 5. Compute overall composite opportunity score (weighted sum)
-        # Market (30%), Clinical (25%), Patent (25%), Literature (20%)
-        overall_score = round(
-            (market_score * 0.30) +
-            (clinical_score * 0.25) +
-            (patent_score * 0.25) +
-            (research_score * 0.20),
-            1
-        )
 
         score_obj = OpportunityScore(
             overall_score=overall_score,
@@ -106,19 +139,17 @@ class ScoringService:
                 confidence_factors=confidence_factors,
                 explanation=explanations,
             ),
-            confidence_breakdown=self._build_confidence_breakdown(context, confidence_score),
-            category_weights={
-                "market": 30.0,
-                "clinical": 25.0,
-                "patent": 25.0,
-                "literature": 20.0
-            }
+            confidence_breakdown=self._build_confidence_breakdown(context, confidence_score, provenance_map),
+            category_weights=renormalized_weights,
+            real_sources_count=real_sources_count,
+            total_sources_count=total_sources_count,
+            data_sources_summary=data_sources_summary,
         )
 
         elapsed = round(time.monotonic() - start_time, 2)
         logger.info(
-            "[ScoringService] Score calculated for '%s' in %.2fs: Overall=%.1f, Confidence=%.0f%%",
-            context.molecule_name, elapsed, overall_score, confidence_score
+            "[ScoringService] Score calculated for '%s' in %.2fs: Overall=%.1f (%s), Confidence=%.0f%%",
+            context.molecule_name, elapsed, overall_score, data_sources_summary, confidence_score
         )
 
         return score_obj
@@ -133,9 +164,10 @@ class ScoringService:
         context.score = self.calculate(context)
         return context
 
-    def _build_confidence_breakdown(self, context: ResearchContext, overall_conf: float) -> dict:
+    def _build_confidence_breakdown(self, context: ResearchContext, overall_conf: float, provenance_map: Optional[dict] = None) -> dict:
         meta = context.metadata
         available = meta.domains_available
+        prov = provenance_map or {}
 
         # Clinical
         trials_cnt = len(context.clinical.trials) if context.clinical else 0
@@ -187,28 +219,32 @@ class ScoringService:
                     "status": c_status,
                     "count": trials_cnt,
                     "source_name": "ClinicalTrials.gov API v2",
-                    "url": "https://clinicaltrials.gov"
+                    "url": "https://clinicaltrials.gov",
+                    "provenance": prov.get("clinical", getattr(context.clinical, "provenance", "unavailable") if context.clinical else "unavailable")
                 },
                 "literature": {
                     "domain": "Scientific Literature",
                     "status": l_status,
                     "count": pubs_cnt,
                     "source_name": "Europe PMC REST API",
-                    "url": "https://europepmc.org"
+                    "url": "https://europepmc.org",
+                    "provenance": prov.get("literature", getattr(context.literature, "provenance", "unavailable") if context.literature else "unavailable")
                 },
                 "patent": {
                     "domain": "Patent Landscape",
                     "status": p_status,
                     "count": pat_cnt,
                     "source_name": "USPTO & EPO Patent Registry",
-                    "url": "https://patents.google.com"
+                    "url": "https://patents.google.com",
+                    "provenance": prov.get("patent", getattr(context.patent, "provenance", "unavailable") if context.patent else "unavailable")
                 },
                 "market": {
                     "domain": "Market Intelligence",
                     "status": m_status,
                     "size_usd_mn": mkt_sz,
                     "source_name": "IQVIA MIDAS Database",
-                    "url": "https://www.iqvia.com"
+                    "url": "https://www.iqvia.com",
+                    "provenance": prov.get("market", getattr(context.market, "provenance", "unavailable") if context.market else "unavailable")
                 }
             }
         }

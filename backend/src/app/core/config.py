@@ -39,11 +39,8 @@ class Settings:
     JWT_ALGORITHM: str      = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "10080"))  # 7 days
 
-    # Upstash Redis Configuration
-    REDIS_URL: str = os.getenv(
-        "REDIS_URL",
-        "rediss://default:gQAAAAAAAraeAAIgcDI4ZmZlYzVjM2JhNWY0MWNjYThiNTk0YWE5MmY2Njc4Yw@topical-kodiak-177822.upstash.io:6379"
-    )
+    # Upstash Redis Configuration (leave empty for high-speed in-memory cache)
+    REDIS_URL: str = os.getenv("REDIS_URL", "")
     REDIS_TTL_SECONDS: int = int(os.getenv("REDIS_TTL_SECONDS", 86400))  # 24 hours
 
     # Supabase credentials (managed PostgreSQL DB)

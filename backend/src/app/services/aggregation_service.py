@@ -48,6 +48,8 @@ class AggregationService:
                 domains_available.append("market")
             if state.patent and not state.patent.is_empty:
                 domains_available.append("patent")
+            if hasattr(state, "repurposing") and state.repurposing and not state.repurposing.is_empty:
+                domains_available.append("repurposing")
 
             logger.info(
                 "[AggregationService] Received %d populated domain(s) for '%s': %s",
@@ -64,6 +66,7 @@ class AggregationService:
                 literature=state.literature,
                 market=state.market,
                 patent=state.patent,
+                repurposing=getattr(state, "repurposing", None),
                 metadata=metadata,
                 warnings=list(state.warnings),
                 errors=list(state.errors)
@@ -90,6 +93,7 @@ class AggregationService:
                 literature=state.literature,
                 market=state.market,
                 patent=state.patent,
+                repurposing=getattr(state, "repurposing", None),
                 metadata=ResearchMetadata(),
                 warnings=list(state.warnings),
                 errors=fallback_errors
@@ -104,6 +108,13 @@ class AggregationService:
         Computes deterministic metrics across available domain objects.
         """
         meta = ResearchMetadata(domains_available=domains_available)
+        meta.provenance_by_domain = {
+            "clinical": getattr(state.clinical_trials, "provenance", "unavailable") if state.clinical_trials else "unavailable",
+            "literature": getattr(state.literature, "provenance", "unavailable") if state.literature else "unavailable",
+            "market": getattr(state.market, "provenance", "unavailable") if state.market else "unavailable",
+            "patent": getattr(state.patent, "provenance", "unavailable") if state.patent else "unavailable",
+            "repurposing": getattr(state.repurposing, "provenance", "unavailable") if getattr(state, "repurposing", None) else "unavailable",
+        }
 
         # Clinical metrics
         if state.clinical_trials and not state.clinical_trials.is_empty:

@@ -18,6 +18,8 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
     {
       label: 'Clinical Evidence',
       value: score.clinical_score,
+      provenance: 'real',
+      weight: score.category_weights?.clinical,
       explanation: metadata?.total_trials > 0
         ? `${metadata.total_trials} trials identified (${metadata.active_trials_count ?? 0} active, ${metadata.completed_trials_count ?? 0} completed).`
         : 'Limited clinical trial evidence available.',
@@ -25,6 +27,8 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
     {
       label: 'Scientific Literature',
       value: score.research_score,
+      provenance: 'real',
+      weight: score.category_weights?.literature,
       explanation: metadata?.total_publications > 0
         ? `${metadata.total_publications.toLocaleString()} publications indexed (${metadata.highly_cited_papers_count ?? 0} highly cited).`
         : 'Sparse scientific publication footprint.',
@@ -32,16 +36,18 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
     {
       label: 'Market Intelligence',
       value: score.market_score,
+      provenance: 'simulated',
+      weight: score.category_weights?.market ?? 0,
       explanation: metadata?.global_market_size_usd_mn != null
-        ? `Global market size estimated at $${(metadata.global_market_size_usd_mn >= 1000 ? (metadata.global_market_size_usd_mn / 1000).toFixed(1) + 'B' : metadata.global_market_size_usd_mn + 'M')} with ${metadata.latest_market_cagr ?? 0}% CAGR.`
+        ? `Simulated estimate: $${(metadata.global_market_size_usd_mn >= 1000 ? (metadata.global_market_size_usd_mn / 1000).toFixed(1) + 'B' : metadata.global_market_size_usd_mn + 'M')} (Excluded from score).`
         : 'Market sales data unavailable.',
     },
     {
       label: 'Patent Landscape',
       value: score.patent_score,
-      explanation: metadata?.fto_summary && metadata.fto_summary !== 'No patent data available'
-        ? metadata.fto_summary
-        : `${metadata?.patent_count ?? 0} patent records analyzed.`,
+      provenance: 'simulated',
+      weight: score.category_weights?.patent ?? 0,
+      explanation: 'Simulated data — unverified legal status (Excluded from score).',
     },
   ] : null;
 
@@ -59,7 +65,7 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
             Opportunity Score
           </h2>
           <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
-            Deterministic commercial viability score across research domains.
+            Deterministic commercial viability score across verified research domains.
           </p>
         </div>
         <div
@@ -94,8 +100,11 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
               </span>
             </div>
           </div>
-          <p className="text-[11px] pt-1" style={{ color: 'var(--color-text-faint)' }}>
-            Calculated from Clinical, Literature, Patent and Market evidence.
+          <p className="text-xs font-medium pt-1" style={{ color: 'var(--color-text-muted)' }}>
+            {score.data_sources_summary || `Based on ${score.real_sources_count ?? 2} of 4 data sources`}
+          </p>
+          <p className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>
+            Simulated data sources (Patent &amp; Market) are excluded from the composite score.
           </p>
         </div>
       ) : (
@@ -121,15 +130,28 @@ export default function OpportunityCard({ score, metadata, isLoading }) {
           <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-faint)' }}>
             Domain Score Breakdown &amp; Rationale
           </p>
-          {subScores.map(({ label, value, explanation }) => (
+          {subScores.map(({ label, value, provenance, weight, explanation }) => (
             <div
               key={label}
               className="space-y-1 p-3 border"
               style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border-light)', borderRadius: '6px' }}
             >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{label}</span>
-                <span className="font-bold tabular-nums" style={{ color: 'var(--color-blue)' }}>{value?.toFixed(1) ?? '—'}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{label}</span>
+                  {provenance === 'simulated' ? (
+                    <span className="text-[10px] font-medium px-1.5 py-0.2 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                      Excluded (Simulated)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium px-1.5 py-0.2 rounded border bg-teal-50 text-teal-700 border-teal-200">
+                      Weight: {weight ? `${weight}%` : 'Verified'}
+                    </span>
+                  )}
+                </div>
+                <span className="font-bold tabular-nums" style={{ color: provenance === 'real' ? 'var(--color-blue)' : '#64748b' }}>
+                  {value?.toFixed(1) ?? '—'}
+                </span>
               </div>
               <ScoreBar value={value} />
               <p className="text-[11px] pt-1 leading-normal flex items-start gap-1" style={{ color: 'var(--color-text-faint)' }}>

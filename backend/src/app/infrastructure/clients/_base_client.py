@@ -154,6 +154,97 @@ class BaseAPIClient:
         )
         return {}
 
+    async def _post(
+        self,
+        url: str,
+        json_data: dict | None = None,
+        headers: dict | None = None,
+    ) -> dict:
+        """
+        Perform a POST request with exponential backoff retry.
+        Returns parsed JSON dict on success, empty dict {} on failure.
+        """
+        last_error: Exception | None = None
+
+        for attempt in range(1, settings.API_MAX_RETRIES + 1):
+            start = time.monotonic()
+
+            try:
+                logger.info(
+                    "[%s] POST %s (attempt %d/%d)",
+                    self._client_name, url, attempt, settings.API_MAX_RETRIES
+                )
+
+                response = await self._http.post(url, json=json_data, headers=headers)
+                elapsed = round(time.monotonic() - start, 2)
+
+                if 400 <= response.status_code < 500:
+                    logger.warning(
+                        "[%s] 4xx response %d for %s — not retrying. Body: %s",
+                        self._client_name, response.status_code, url, response.text[:200]
+                    )
+                    return {}
+
+                if response.status_code >= 500:
+                    raise httpx.HTTPStatusError(
+                        f"5xx {response.status_code}",
+                        request=response.request,
+                        response=response,
+                    )
+
+                logger.info(
+                    "[%s] Success %d in %.2fs",
+                    self._client_name, response.status_code, elapsed
+                )
+                return response.json()
+
+            except httpx.TimeoutException as exc:
+                elapsed = round(time.monotonic() - start, 2)
+                last_error = exc
+                logger.warning(
+                    "[%s] POST Timeout after %.2fs on attempt %d",
+                    self._client_name, elapsed, attempt
+                )
+
+            except httpx.NetworkError as exc:
+                last_error = exc
+                logger.warning(
+                    "[%s] POST Network error on attempt %d: %s",
+                    self._client_name, attempt, str(exc)
+                )
+
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                logger.warning(
+                    "[%s] POST HTTP error on attempt %d: %s",
+                    self._client_name, attempt, str(exc)
+                )
+
+            except ValueError as exc:
+                last_error = exc
+                logger.warning(
+                    "[%s] POST Invalid JSON response on attempt %d: %s",
+                    self._client_name, attempt, str(exc)
+                )
+
+            except Exception as exc:
+                last_error = exc
+                logger.warning(
+                    "[%s] POST Unexpected error on attempt %d: %s",
+                    self._client_name, attempt, str(exc)
+                )
+
+            if attempt < settings.API_MAX_RETRIES:
+                wait = settings.API_RETRY_WAIT_MIN * (2 ** (attempt - 1))
+                logger.info("[%s] Retrying in %.0fs...", self._client_name, wait)
+                await asyncio.sleep(wait)
+
+        logger.error(
+            "[%s] All %d POST attempts failed for %s. Last error: %s",
+            self._client_name, settings.API_MAX_RETRIES, url, str(last_error)
+        )
+        return {}
+
     async def _curl_fallback(
         self,
         url: str,

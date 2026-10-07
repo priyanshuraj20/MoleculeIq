@@ -15,6 +15,7 @@ from app.domain.clinical import ClinicalDomain
 from app.domain.literature import LiteratureDomain
 from app.domain.market import MarketInsightsDomain
 from app.domain.patent import PatentLandscapeDomain
+from app.domain.repurposing import RepurposingDomain
 
 
 @dataclass
@@ -28,5 +29,6 @@ class AgentState:
     literature:      Optional[LiteratureDomain] = None
     market:          Optional[MarketInsightsDomain] = None
     patent:          Optional[PatentLandscapeDomain] = None
+    repurposing:     Optional[RepurposingDomain] = None
     errors:          List[str] = field(default_factory=list)
     warnings:        List[str] = field(default_factory=list)

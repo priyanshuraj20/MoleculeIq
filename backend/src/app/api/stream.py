@@ -21,6 +21,7 @@ Emits deterministic SSE event sequence:
  12. event: research_completed (Data payload contains full ResearchContext JSON)
 """
 
+import asyncio
 import dataclasses
 import json
 import logging
@@ -29,12 +30,13 @@ from typing import AsyncGenerator
 from fastapi import APIRouter, HTTPException, Query, status, Depends
 from fastapi.responses import StreamingResponse
 from app.auth import get_current_user
-
 from app.domain.agent_state import AgentState
+
 from app.agents.clinical_agent import ClinicalTrialsAgent
 from app.agents.literature_agent import LiteratureAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.patent_agent import PatentAgent
+from app.agents.repurposing_agent import RepurposingAgent
 from app.services import AggregationService, ScoringService
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,7 @@ _clinical_agent   = ClinicalTrialsAgent()
 _literature_agent = LiteratureAgent()
 _market_agent     = MarketAgent()
 _patent_agent     = PatentAgent()
+_repurposing_agent = RepurposingAgent()
 _agg_service      = AggregationService()
 _score_service    = ScoringService()
 
@@ -79,9 +82,143 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
     """
     Async generator yielding real-time SSE progress events while running
     multi-agent research, aggregation, and scoring.
+    Supports single compound research and dual molecule comparison ("A vs B").
     """
     start_time = time.monotonic()
     logger.info("[SSE Stream] Commencing stream for molecule '%s'", molecule_name)
+
+    # 0. Validate pharmaceutical entity (reject non-drug substances like water, h2o, air, etc.)
+    from app.services.synonym_service import is_non_pharmaceutical
+    is_invalid, error_msg = is_non_pharmaceutical(molecule_name)
+    if is_invalid:
+        logger.info("[SSE Stream] Rejected non-pharmaceutical query: '%s'", molecule_name)
+        yield format_sse("research_failed", {
+            "molecule_name": molecule_name,
+            "status": "failed",
+            "error": error_msg,
+            "execution_time_seconds": 0.01
+        })
+        return
+
+    # 1. Check Redis cache
+    try:
+        from app.services.cache_service import CacheService
+        _cache_service = CacheService()
+        cached_res = await _cache_service.get_report(molecule_name)
+        if cached_res:
+            yield format_sse("research_started", {
+                "molecule_name": molecule_name,
+                "status": "cached",
+                "message": f"Loading cached dossier for '{molecule_name}'...",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            })
+            yield format_sse("research_completed", cached_res)
+            return
+    except Exception as exc:
+        logger.warning("[SSE Stream] Cache check warning: %s", exc)
+
+    # 2. Check for comparison query (e.g. "Pembrolizumab vs Semaglutide")
+    lower_q = molecule_name.lower()
+    if " vs " in lower_q or " vs. " in lower_q:
+        parts = lower_q.replace(" vs. ", " vs ").split(" vs ")
+        if len(parts) == 2 and parts[0].strip() and parts[1].strip():
+            mol_a = parts[0].strip()
+            mol_b = parts[1].strip()
+            yield format_sse("research_started", {
+                "molecule_name": f"{mol_a.title()} vs {mol_b.title()}",
+                "query_name": molecule_name,
+                "status": "started",
+                "message": f"Benchmarking {mol_a.title()} against {mol_b.title()} across dual multi-agent pipelines...",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            })
+            yield format_sse("clinical_started", {
+                "step": "clinical",
+                "status": "in_progress",
+                "message": f"Analyzing clinical trials for {mol_a.title()} and {mol_b.title()}..."
+            })
+            try:
+                from app.services.comparison_service import ComparisonService
+                comp_service = ComparisonService()
+                
+                # Execute comparison task asynchronously in background
+                comp_task = asyncio.create_task(comp_service.compare(mol_a, mol_b))
+
+                # Stream progressive milestones while dual pipelines execute
+                progress_milestones = [
+                    ("clinical_started", "clinical", "Mining ClinicalTrials.gov databases for both molecules...", 2.5),
+                    ("clinical_completed", "clinical", f"Clinical trial records indexed ({mol_a.title()} vs {mol_b.title()}).", 2.5),
+                    ("literature_started", "literature", "Querying scientific publications on Europe PMC...", 3.0),
+                    ("literature_completed", "literature", "Scientific publication volumes & citations indexed.", 2.5),
+                    ("market_started", "market", "Evaluating commercial market size & differential growth...", 2.5),
+                    ("market_completed", "market", "Market size differentials mapped.", 2.5),
+                    ("patent_started", "patent", "Reviewing patent landscape and freedom-to-operate horizons...", 2.5),
+                    ("patent_completed", "patent", "Patent horizons and exclusivity windows evaluated.", 2.5),
+                    ("repurposing_started", "repurposing", "Screening novel repurposing indications (Open Targets + ChEMBL)...", 2.5),
+                    ("repurposing_completed", "repurposing", "Repurposing profiles cross-referenced.", 2.0),
+                    ("aggregation_completed", "aggregation", "Comparative analysis matrices aggregated.", 1.5),
+                    ("scoring_completed", "scoring", "Differential commercial advantages scored.", 1.5),
+                ]
+
+                idx = 0
+                while not comp_task.done():
+                    if idx < len(progress_milestones):
+                        evt_name, step_name, msg_text, wait_sec = progress_milestones[idx]
+                        yield format_sse(evt_name, {
+                            "step": step_name,
+                            "status": "in_progress" if "started" in evt_name else "completed",
+                            "message": msg_text
+                        })
+                        idx += 1
+                        try:
+                            await asyncio.wait_for(asyncio.shield(comp_task), timeout=wait_sec)
+                        except asyncio.TimeoutError:
+                            pass
+                    else:
+                        # Keep-alive comment ping to prevent connection timeout
+                        yield ": keepalive\n\n"
+                        try:
+                            await asyncio.wait_for(asyncio.shield(comp_task), timeout=2.0)
+                        except asyncio.TimeoutError:
+                            pass
+
+                comp_report = await comp_task
+
+                # Ensure terminal aggregation and scoring events are emitted
+                yield format_sse("aggregation_completed", {
+                    "step": "aggregation",
+                    "status": "completed",
+                    "message": "Comparative analysis matrices aggregated."
+                })
+                yield format_sse("scoring_completed", {
+                    "step": "scoring",
+                    "status": "completed",
+                    "message": "Differential commercial advantages scored."
+                })
+
+                res_dict = {
+                    "mode": "comparison",
+                    "data": dataclasses.asdict(comp_report)
+                }
+
+                # Store comparison in Redis / fallback cache
+                try:
+                    await _cache_service.set_report(molecule_name, res_dict)
+                except Exception:
+                    pass
+
+                yield format_sse("research_completed", res_dict)
+                return
+
+            except Exception as exc:
+                err_msg = f"Comparison failed between '{mol_a}' and '{mol_b}': {str(exc)}"
+                logger.error("[SSE Stream] %s", err_msg, exc_info=True)
+                yield format_sse("research_failed", {
+                    "molecule_name": molecule_name,
+                    "status": "failed",
+                    "error": err_msg,
+                    "execution_time_seconds": round(time.monotonic() - start_time, 2)
+                })
+                return
 
     syn_result = _synonym_resolver.resolve(molecule_name)
     canonical = syn_result.canonical_name or molecule_name
@@ -149,6 +286,18 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
             "fto_summary": state.patent.fto_summary if state.patent else "N/A"
         })
 
+        # Step 4.5: Drug Repurposing Discovery Agent
+        yield format_sse("repurposing_started", {"step": "repurposing", "status": "in_progress", "message": "Discovering drug repurposing indications..."})
+        state = await _repurposing_agent.execute(state)
+        candidates_count = len(state.repurposing.candidates) if state.repurposing else 0
+        yield format_sse("repurposing_completed", {
+            "step": "repurposing",
+            "status": "completed",
+            "message": f"Repurposing discovery complete ({candidates_count} candidate indications identified)",
+            "candidates_found": candidates_count,
+            "provenance": "real"
+        })
+
         # Step 5: Research Aggregation Service
         context = _agg_service.build_context(state)
         yield format_sse("aggregation_completed", {
@@ -183,6 +332,12 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
         context_dict = dataclasses.asdict(scored_context)
 
         logger.info("[SSE Stream] Stream completed for '%s' in %.2fs", molecule_name, elapsed)
+        try:
+            from app.services.cache_service import CacheService
+            _cache_service = CacheService()
+            await _cache_service.set_report(molecule_name, context_dict)
+        except Exception:
+            pass
         yield format_sse("research_completed", context_dict)
 
     except Exception as exc:

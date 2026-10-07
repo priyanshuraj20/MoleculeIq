@@ -162,15 +162,19 @@ class PDFReportService:
         story.extend(self._build_literature_section(context, report, styles))
         story.append(Spacer(1, 15))
 
-        # 8. Strategic Risks
-        story.extend(self._build_section("7. STRATEGIC RISK FACTORS", report.risks, styles))
+        # 8. Drug Repurposing Discovery
+        story.extend(self._build_repurposing_section(context, report, styles))
         story.append(Spacer(1, 15))
 
-        # 9. Investment Recommendation (Callout Box)
+        # 9. Strategic Risks
+        story.extend(self._build_section("8. STRATEGIC RISK FACTORS", report.risks, styles))
+        story.append(Spacer(1, 15))
+
+        # 10. Investment Recommendation (Callout Box)
         story.extend(self._build_recommendation_box(report.recommendation, styles))
         story.append(Spacer(1, 20))
 
-        # 10. Appendix & System Metadata
+        # 11. Appendix & System Metadata
         story.extend(self._build_appendix(context, report, styles))
 
         # Build PDF using NumberedCanvas for dynamic page numbering
@@ -300,6 +304,11 @@ class PDFReportService:
 
         if context.score:
             s = context.score
+            w_mkt = f"{s.category_weights.get('market', 0.0):.1f}%" + (" (Simulated - Excluded)" if s.category_weights.get('market', 0.0) == 0 else "")
+            w_clin = f"{s.category_weights.get('clinical', 0.0):.1f}%" + (" (Verified)" if s.category_weights.get('clinical', 0.0) > 0 else "")
+            w_pat = f"{s.category_weights.get('patent', 0.0):.1f}%" + (" (Simulated - Excluded)" if s.category_weights.get('patent', 0.0) == 0 else "")
+            w_lit = f"{s.category_weights.get('literature', 0.0):.1f}%" + (" (Verified)" if s.category_weights.get('literature', 0.0) > 0 else "")
+
             table_data = [
                 [
                     Paragraph("Scoring Category", styles["TableHeader"]),
@@ -307,15 +316,15 @@ class PDFReportService:
                     Paragraph("Weight", styles["TableHeader"]),
                     Paragraph("Strategic Assessment", styles["TableHeader"])
                 ],
-                [Paragraph("Market Feasibility", styles["TableCellBold"]), Paragraph(f"{s.market_score:.1f}", styles["TableCell"]), Paragraph("30%", styles["TableCell"]), Paragraph("Global volume & CAGR growth", styles["TableCell"])],
-                [Paragraph("Clinical Momentum", styles["TableCellBold"]), Paragraph(f"{s.clinical_score:.1f}", styles["TableCell"]), Paragraph("25%", styles["TableCell"]), Paragraph("Active & completed trial validation", styles["TableCell"])],
-                [Paragraph("Patent Landscape / FTO", styles["TableCellBold"]), Paragraph(f"{s.patent_score:.1f}", styles["TableCell"]), Paragraph("25%", styles["TableCell"]), Paragraph("FTO status & patent constraint risk", styles["TableCell"])],
-                [Paragraph("Scientific Research", styles["TableCellBold"]), Paragraph(f"{s.research_score:.1f}", styles["TableCell"]), Paragraph("20%", styles["TableCell"]), Paragraph("Publication volume & citation impact", styles["TableCell"])],
-                [Paragraph("OVERALL OPPORTUNITY SCORE", styles["TableCellBold"]), Paragraph(f"<b>{s.overall_score:.1f}</b>", styles["TableCellBold"]), Paragraph("<b>100%</b>", styles["TableCellBold"]), Paragraph("<b>Composite weighted opportunity score</b>", styles["TableCellBold"])],
+                [Paragraph("Market Feasibility", styles["TableCellBold"]), Paragraph(f"{s.market_score:.1f}", styles["TableCell"]), Paragraph(w_mkt, styles["TableCell"]), Paragraph("Global volume & CAGR growth (Simulated)", styles["TableCell"])],
+                [Paragraph("Clinical Momentum", styles["TableCellBold"]), Paragraph(f"{s.clinical_score:.1f}", styles["TableCell"]), Paragraph(w_clin, styles["TableCell"]), Paragraph("Active & completed trial validation", styles["TableCell"])],
+                [Paragraph("Patent Landscape / FTO", styles["TableCellBold"]), Paragraph(f"{s.patent_score:.1f}", styles["TableCell"]), Paragraph(w_pat, styles["TableCell"]), Paragraph("Synthetic records; legal status unverified", styles["TableCell"])],
+                [Paragraph("Scientific Research", styles["TableCellBold"]), Paragraph(f"{s.research_score:.1f}", styles["TableCell"]), Paragraph(w_lit, styles["TableCell"]), Paragraph("Publication volume & citation impact", styles["TableCell"])],
+                [Paragraph("OVERALL OPPORTUNITY SCORE", styles["TableCellBold"]), Paragraph(f"<b>{s.overall_score:.1f}</b>", styles["TableCellBold"]), Paragraph("<b>100%</b>", styles["TableCellBold"]), Paragraph(f"<b>{s.data_sources_summary}</b>", styles["TableCellBold"])],
                 [Paragraph("DATA CONFIDENCE SIGNAL", styles["TableCellBold"]), Paragraph(f"<b>{s.confidence_score:.1f}</b>", styles["TableCellBold"]), Paragraph("Signal", styles["TableCellBold"]), Paragraph("Data completeness across 4 domains", styles["TableCellBold"])],
             ]
 
-            t = Table(table_data, colWidths=[150, 80, 65, 245])
+            t = Table(table_data, colWidths=[140, 75, 110, 215])
             t.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_NAVY),
                 ("BACKGROUND", (0, 1), (-1, 1), BG_LIGHT),
@@ -332,7 +341,7 @@ class PDFReportService:
 
     def _build_clinical_section(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
         """Renders Clinical Landscape text + Clinical Trials Table."""
-        elements = self._build_section("3. CLINICAL DEVELOPMENT LANDSCAPE", report.clinical_analysis, styles)
+        elements = self._build_section("3. CLINICAL DEVELOPMENT LANDSCAPE (Verified — ClinicalTrials.gov)", report.clinical_analysis, styles)
 
         if context.clinical and context.clinical.trials:
             table_data = [
@@ -368,7 +377,7 @@ class PDFReportService:
 
     def _build_market_section(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
         """Renders Market Analysis text + Market Sales Table."""
-        elements = self._build_section("4. MARKET ANALYSIS & SALES INTELLIGENCE", report.market_analysis, styles)
+        elements = self._build_section("4. MARKET ANALYSIS & SALES (Simulated Estimate)", report.market_analysis, styles)
 
         if context.market and context.market.data_points:
             table_data = [
@@ -406,7 +415,7 @@ class PDFReportService:
 
     def _build_patent_section(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
         """Renders Patent Landscape text + Patent Filings Table."""
-        elements = self._build_section("5. PATENT LANDSCAPE & FREEDOM-TO-OPERATE", report.patent_analysis, styles)
+        elements = self._build_section("5. PATENT LANDSCAPE (Simulated Data — Legal Status Unverified)", report.patent_analysis, styles)
 
         if context.patent and context.patent.patents:
             table_data = [
@@ -444,7 +453,7 @@ class PDFReportService:
 
     def _build_literature_section(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
         """Renders Scientific Momentum text + Literature Publications Table."""
-        elements = self._build_section("6. SCIENTIFIC MOMENTUM & PUBLICATIONS", report.scientific_analysis, styles)
+        elements = self._build_section("6. SCIENTIFIC MOMENTUM & PUBLICATIONS (Verified — Europe PMC)", report.scientific_analysis, styles)
 
         if context.literature and context.literature.publications:
             table_data = [
@@ -476,10 +485,58 @@ class PDFReportService:
 
         return elements
 
+    def _build_repurposing_section(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
+        """Renders Drug Repurposing Discovery candidate table with Open Targets & real clinical/pub evidence."""
+        elements = [
+            Paragraph("7. DRUG REPURPOSING DISCOVERY (Verified — Open Targets)", styles["SectionHeader"]),
+            HRFlowable(width="100%", thickness=1.5, color=ACCENT_INDIGO, spaceBefore=2, spaceAfter=8),
+        ]
+
+        if hasattr(context, "repurposing") and context.repurposing and context.repurposing.candidates:
+            elements.append(Paragraph(
+                "Algorithmic target-to-disease association discovery identified candidate new indications based on verified Open Targets Platform & ChEMBL targets, filtered by disease ontology to exclude already approved/known indications, and cross-referenced with real ClinicalTrials.gov and Europe PMC evidence records.",
+                styles["BodyDark"]
+            ))
+            elements.append(Spacer(1, 4))
+
+            table_data = [
+                [
+                    Paragraph("Candidate Indication", styles["TableHeader"]),
+                    Paragraph("Ontology ID", styles["TableHeader"]),
+                    Paragraph("Assoc. Score", styles["TableHeader"]),
+                    Paragraph("Associated Target(s)", styles["TableHeader"]),
+                    Paragraph("Evidence Found", styles["TableHeader"])
+                ]
+            ]
+            for cand in context.repurposing.candidates[:5]:
+                targets_str = ", ".join(cand.targets) if cand.targets else "N/A"
+                ev_str = f"{cand.evidence_trials_count} trials / {cand.evidence_papers_count} papers"
+                table_data.append([
+                    Paragraph(cand.disease_name[:40] + ("..." if len(cand.disease_name) > 40 else ""), styles["TableCellBold"]),
+                    Paragraph(cand.disease_id, styles["TableCell"]),
+                    Paragraph(f"{cand.association_score:.3f}", styles["TableCellBold"]),
+                    Paragraph(targets_str[:30] + ("..." if len(targets_str) > 30 else ""), styles["TableCell"]),
+                    Paragraph(ev_str, styles["TableCell"]),
+                ])
+
+            t = Table(table_data, colWidths=[160, 95, 75, 110, 100])
+            t.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), PRIMARY_NAVY),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#FFFFFF"), BG_LIGHT]),
+                ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+                ("PADDING", (0, 0), (-1, -1), 4),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]))
+            elements.append(t)
+        else:
+            elements.append(Paragraph("No candidate repurposing indications identified for this compound.", styles["BodyDark"]))
+
+        return elements
+
     def _build_recommendation_box(self, recommendation_text: str, styles) -> List:
         """Renders an executive callout box for the final Investment Recommendation."""
         rec_data = [
-            [Paragraph(f"<b>8. STRATEGIC INVESTMENT RECOMMENDATION</b><br/><br/>{recommendation_text}", styles["RecommendationText"])]
+            [Paragraph(f"<b>9. STRATEGIC INVESTMENT RECOMMENDATION</b><br/><br/>{recommendation_text}", styles["RecommendationText"])]
         ]
         rec_table = Table(rec_data, colWidths=[540])
         rec_table.setStyle(TableStyle([
@@ -491,9 +548,9 @@ class PDFReportService:
         return [KeepTogether([rec_table])]
 
     def _build_appendix(self, context: ResearchContext, report: ExecutiveReport, styles) -> List:
-        """Renders Section 9: Appendix & Metadata Table."""
+        """Renders Section 10: Appendix & Metadata Table."""
         elements = [
-            Paragraph("9. APPENDIX & SYSTEM METADATA", styles["SectionHeader"]),
+            Paragraph("10. APPENDIX & SYSTEM METADATA", styles["SectionHeader"]),
             HRFlowable(width="100%", thickness=1.5, color=ACCENT_INDIGO, spaceBefore=2, spaceAfter=6),
         ]
 

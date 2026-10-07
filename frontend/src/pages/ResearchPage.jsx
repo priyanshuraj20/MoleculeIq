@@ -12,12 +12,23 @@ import {
   AlertCircle,
   CheckCircle2,
   Circle,
+  GitBranch,
+  Scale,
+  Download,
+  FileCode,
+  ExternalLink,
+  Compass,
+  Clock,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 import { useResearch }           from '../hooks/useResearch';
 import OverviewCard              from '../components/dashboard/OverviewCard';
 import OpportunityCard           from '../components/dashboard/OpportunityCard';
+import RepurposingCard          from '../components/dashboard/RepurposingCard';
 import ExecutivePreview          from '../components/dashboard/ExecutivePreview';
+import AgentOrchestratorView     from '../components/AgentOrchestratorView';
 import { downloadPdfReport }     from '../services/pdfService';
 import MoleculeIQLogo            from '../components/MoleculeIQLogo';
 import ComparisonView            from '../components/ComparisonView';
@@ -34,6 +45,7 @@ const EVENT_ORDER = [
   'literature_started', 'literature_completed',
   'market_started',     'market_completed',
   'patent_started',     'patent_completed',
+  'repurposing_started','repurposing_completed',
   'aggregation_completed',
   'scoring_completed',
   'research_completed',
@@ -54,8 +66,9 @@ function formatMarketSize(usdMn) {
 }
 
 function deriveOverviewCards(data) {
-  const meta = data?.metadata;
-  if (!meta) return IDLE_CARDS;
+  if (!data || data.mode === 'comparison' || !data.metadata) return IDLE_CARDS;
+  const meta = data.metadata;
+  const provMap = meta.provenance_by_domain || {};
 
   return [
     {
@@ -63,7 +76,8 @@ function deriveOverviewCards(data) {
       label: 'Clinical Evidence',
       value: meta.total_trials != null ? `${meta.total_trials} Trials` : '—',
       sub: `${meta.active_trials_count ?? 0} active · ${meta.completed_trials_count ?? 0} completed`,
-      source: data.clinical?.source ?? null,
+      source: data.clinical?.source ?? 'ClinicalTrials.gov',
+      provenance: data.clinical?.provenance || provMap.clinical || 'real',
       details: [
         { label: 'Total Studies Found',    value: meta.total_trials },
         { label: 'Active / Recruiting',    value: meta.active_trials_count ?? 0 },
@@ -75,7 +89,8 @@ function deriveOverviewCards(data) {
       label: 'Scientific Literature',
       value: meta.total_publications != null ? meta.total_publications.toLocaleString() : '—',
       sub: `${meta.highly_cited_papers_count ?? 0} highly cited publications`,
-      source: data.literature?.source ?? null,
+      source: data.literature?.source ?? 'Europe PMC',
+      provenance: data.literature?.provenance || provMap.literature || 'real',
       details: [
         { label: 'Total Indexed Papers',         value: meta.total_publications?.toLocaleString() ?? 0 },
         { label: 'Highly Cited (≥10 citations)', value: meta.highly_cited_papers_count ?? 0 },
@@ -85,8 +100,9 @@ function deriveOverviewCards(data) {
       icon: TrendingUp,
       label: 'Market Intelligence',
       value: formatMarketSize(meta.global_market_size_usd_mn),
-      sub: meta.latest_market_cagr != null ? `${meta.latest_market_cagr.toFixed(1)}% CAGR growth` : 'Global sales data',
-      source: data.market?.source ?? null,
+      sub: meta.latest_market_cagr != null ? `${meta.latest_market_cagr.toFixed(1)}% CAGR growth` : 'Global sales estimate',
+      source: data.market?.source ?? 'IQVIA / Market Models',
+      provenance: data.market?.provenance || provMap.market || 'simulated',
       details: [
         { label: 'Global Addressable Market', value: formatMarketSize(meta.global_market_size_usd_mn) },
         { label: '5-Year CAGR',               value: meta.latest_market_cagr != null ? `${meta.latest_market_cagr.toFixed(1)}%` : 'N/A' },
@@ -97,8 +113,9 @@ function deriveOverviewCards(data) {
       icon: ShieldCheck,
       label: 'Patent Landscape',
       value: meta.patent_count != null ? `${meta.patent_count} Patents` : '—',
-      sub: meta.fto_summary && meta.fto_summary !== 'No patent data available' ? meta.fto_summary : 'Active filings',
-      source: data.patent?.source ?? null,
+      sub: (meta.fto_summary && meta.fto_summary !== 'No patent data available') ? meta.fto_summary : 'Simulated records',
+      source: data.patent?.source ?? 'Patent Registry Database',
+      provenance: data.patent?.provenance || provMap.patent || 'simulated',
       details: [
         { label: 'Total Patent Filings', value: meta.patent_count ?? 0 },
         { label: 'Active Filings',       value: meta.active_patents_count ?? 0 },
@@ -110,7 +127,7 @@ function deriveOverviewCards(data) {
 }
 
 function deriveExecutiveSections(data) {
-  if (!data) return [];
+  if (!data || data.mode === 'comparison' || !data.metadata) return [];
   const meta  = data.metadata;
   const mol   = data.molecule_name;
   const score = data.score;
@@ -120,31 +137,31 @@ function deriveExecutiveSections(data) {
     sections.push({
       title: 'Commercial Opportunity',
       icon: Award,
-      content: `${mol} scores ${score.overall_score.toFixed(1)} / 100 on overall commercial viability with ${score.confidence_score.toFixed(0)}% data confidence. The compound displays ${score.overall_score >= 70 ? 'strong' : 'moderate'} strategic alignment across clinical, market, and intellectual property domains.`,
+      content: `${mol} scores ${score.overall_score.toFixed(1)} / 100 on overall commercial viability with ${score.confidence_score?.toFixed(0) || 0}% data confidence. The compound displays ${score.overall_score >= 70 ? 'strong' : 'moderate'} strategic alignment across clinical, market, and intellectual property domains.`,
     });
   }
-  if (meta.total_trials > 0) {
+  if (meta?.total_trials > 0) {
     sections.push({
       title: 'Clinical Insights',
       icon: Activity,
       content: `${mol} has ${meta.total_trials} clinical trial records on file (${meta.active_trials_count ?? 0} active, ${meta.completed_trials_count ?? 0} completed). This reflects ${meta.active_trials_count > 0 ? 'active ongoing clinical validation' : 'established prior clinical studies'}.`,
     });
   }
-  if (meta.global_market_size_usd_mn != null) {
+  if (meta?.global_market_size_usd_mn != null) {
     sections.push({
       title: 'Market Analysis',
       icon: TrendingUp,
       content: `Global addressable market size is estimated at ${formatMarketSize(meta.global_market_size_usd_mn)}${meta.latest_market_cagr != null ? ` with a ${meta.latest_market_cagr.toFixed(1)}% 5-year CAGR` : ''}. ${meta.market_regions?.length > 0 ? `Key regions include ${meta.market_regions.slice(0, 4).join(', ')}.` : ''}`,
     });
   }
-  if (meta.patent_count > 0) {
+  if (meta?.patent_count > 0) {
     sections.push({
       title: 'Patent Landscape & FTO',
       icon: ShieldCheck,
       content: `Patent search identified ${meta.patent_count} filings (${meta.active_patents_count ?? 0} active). FTO Status: ${meta.fto_summary || 'Clean Freedom-To-Operate'}.`,
     });
   }
-  if (meta.total_publications > 0) {
+  if (meta?.total_publications > 0) {
     sections.push({
       title: 'Scientific Momentum',
       icon: BookOpen,
@@ -162,17 +179,44 @@ const IDLE_CARDS = [
 ];
 
 // Individual pipeline step row
-function PipelineStep({ label, done, visible }) {
+function PipelineStep({ label, done, visible, provenance = 'real' }) {
   if (!visible) return null;
+
+  let badgeText = 'Verified';
+  let badgeStyle = {
+    backgroundColor: '#f0fdfb',
+    borderColor: 'var(--color-teal-dim)',
+    color: 'var(--color-teal)',
+  };
+
+  if (provenance === 'simulated') {
+    badgeText = 'Simulated';
+    badgeStyle = {
+      backgroundColor: '#fffbeb',
+      borderColor: '#fde68a',
+      color: '#b45309',
+    };
+  } else if (provenance === 'unavailable') {
+    badgeText = 'Unavailable';
+    badgeStyle = {
+      backgroundColor: '#f3f4f6',
+      borderColor: '#e5e7eb',
+      color: '#6b7280',
+    };
+  }
+
   return (
-    <div className="flex items-center gap-3 py-1.5">
+    <div className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
       {done ? (
-        <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: 'var(--color-teal)' }} />
+        <CheckCircle2
+          className="w-4 h-4 shrink-0"
+          style={{ color: provenance === 'simulated' ? '#f59e0b' : 'var(--color-teal)' }}
+        />
       ) : (
         <Loader2 className="w-4 h-4 shrink-0 animate-spin" style={{ color: 'var(--color-blue)' }} />
       )}
       <span
-        className="text-sm"
+        className="text-sm font-medium"
         style={{ color: done ? 'var(--color-text)' : 'var(--color-text-muted)' }}
       >
         {label}
@@ -180,13 +224,9 @@ function PipelineStep({ label, done, visible }) {
       {done && (
         <span
           className="ml-auto text-xs font-medium px-2 py-0.5 rounded border"
-          style={{
-            backgroundColor: '#f0fdfb',
-            borderColor: 'var(--color-teal-dim)',
-            color: 'var(--color-teal)',
-          }}
+          style={badgeStyle}
         >
-          Verified
+          {badgeText}
         </span>
       )}
     </div>
@@ -199,7 +239,17 @@ export default function ResearchPage() {
 
   const [inputVal,    setInputVal]    = useState(initialQuery);
   const [activeQuery, setActiveQuery] = useState(initialQuery);
+  const [activeTab,   setActiveTab]   = useState('overview');
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [comparatorDrug,   setComparatorDrug]   = useState('');
+  const [copiedNctId,      setCopiedNctId]      = useState(null);
+
+  const handleCopyNct = (nctId) => {
+    if (!nctId) return;
+    navigator.clipboard.writeText(nctId);
+    setCopiedNctId(nctId);
+    setTimeout(() => setCopiedNctId(null), 2000);
+  };
 
   const { status, statusMessage, lastEvent, data, errorMessage, runResearch } = useResearch();
   const resultsRef = useRef(null);
@@ -227,6 +277,7 @@ export default function ResearchPage() {
   const isLiteratureDone = isEventAtOrPast('literature_completed', lastEvent, isSuccess);
   const isMarketDone     = isEventAtOrPast('market_completed',     lastEvent, isSuccess);
   const isPatentDone     = isEventAtOrPast('patent_completed',     lastEvent, isSuccess);
+  const isRepurposingDone = isEventAtOrPast('repurposing_completed', lastEvent, isSuccess);
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
@@ -358,58 +409,84 @@ export default function ResearchPage() {
               </div>
             </div>
 
-            {/* ── Pipeline status panel (shown while loading or after) ──────── */}
-            {(isLoading || isSuccess) && (
-              <div
-                className="bg-white rounded-lg border p-5"
-                style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
-              >
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{ color: 'var(--color-text-faint)' }}
-                >
-                  Research Pipeline
-                </p>
-
+            {/* ── Pipeline status panel (Only shown during active execution, centered) ── */}
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center py-10 px-4">
                 <div
-                  className="divide-y"
-                  style={{ borderColor: 'var(--color-border-light)' }}
+                  className="bg-white rounded-xl border p-6 max-w-lg w-full space-y-4"
+                  style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
                 >
-                  <PipelineStep
-                    label="Clinical Trials Analysis"
-                    done={isClinicalDone}
-                    visible={true}
-                  />
-                  <PipelineStep
-                    label="Scientific Literature Analysis"
-                    done={isLiteratureDone}
-                    visible={isClinicalDone || isLiteratureDone}
-                  />
-                  <PipelineStep
-                    label="Market Intelligence Analysis"
-                    done={isMarketDone}
-                    visible={isLiteratureDone || isMarketDone}
-                  />
-                  <PipelineStep
-                    label="Patent Landscape Analysis"
-                    done={isPatentDone}
-                    visible={isMarketDone || isPatentDone}
-                  />
-                  <PipelineStep
-                    label="Executive Summary Generation"
-                    done={isSuccess}
-                    visible={isPatentDone}
-                  />
-                </div>
+                  <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--color-border-light)' }}>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                        Multi-Agent LangGraph Pipeline
+                      </span>
+                      <h3 className="text-base font-semibold text-gray-900 mt-0.5">
+                        Researching {activeQuery}
+                      </h3>
+                    </div>
+                    <span
+                      className="text-xs font-medium px-2.5 py-1 rounded border flex items-center gap-1.5"
+                      style={{
+                        backgroundColor: '#eff4ff',
+                        borderColor: 'var(--color-blue-light)',
+                        color: 'var(--color-blue)',
+                      }}
+                    >
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Streaming SSE
+                    </span>
+                  </div>
 
-                {isLoading && statusMessage && (
-                  <p
-                    className="text-xs mt-3 pt-3 border-t"
-                    style={{ color: 'var(--color-text-faint)', borderColor: 'var(--color-border-light)' }}
-                  >
-                    {statusMessage}
-                  </p>
-                )}
+                  <div className="divide-y divide-gray-100">
+                    <PipelineStep
+                      label="Clinical Trials Analysis (ClinicalTrials.gov v2)"
+                      done={isClinicalDone}
+                      visible={true}
+                      provenance="real"
+                    />
+                    <PipelineStep
+                      label="Scientific Literature Mining (Europe PMC)"
+                      done={isLiteratureDone}
+                      visible={isClinicalDone || isLiteratureDone}
+                      provenance="real"
+                    />
+                    <PipelineStep
+                      label="Market Intelligence Analysis"
+                      done={isMarketDone}
+                      visible={isLiteratureDone || isMarketDone}
+                      provenance={data?.market?.provenance || "simulated"}
+                    />
+                    <PipelineStep
+                      label="Patent Landscape Registry"
+                      done={isPatentDone}
+                      visible={isMarketDone || isPatentDone}
+                      provenance={data?.patent?.provenance || "simulated"}
+                    />
+                    <PipelineStep
+                      label="Drug Repurposing Discovery (Open Targets + ChEMBL)"
+                      done={isRepurposingDone}
+                      visible={isPatentDone || isRepurposingDone}
+                      provenance="real"
+                    />
+                    <PipelineStep
+                      label="Deterministic Opportunity Synthesis &amp; Scoring"
+                      done={isSuccess}
+                      visible={isRepurposingDone || isSuccess}
+                      provenance="real"
+                    />
+                  </div>
+
+                  {statusMessage && (
+                    <div
+                      className="text-xs pt-3 border-t text-gray-500 flex items-center gap-2"
+                      style={{ borderColor: 'var(--color-border-light)' }}
+                    >
+                      <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span className="truncate">{statusMessage}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -448,40 +525,556 @@ export default function ResearchPage() {
 
             {/* ── Research results ─────────────────────────────────────────── */}
             {isSuccess && (
-              <div ref={resultsRef} className="space-y-5">
+              <div ref={resultsRef} className="space-y-6">
 
                 {data?.mode === 'comparison' || data?.data?.molecule_a_name ? (
-                  <ComparisonView comparisonData={data?.data || data} />
+                  <ComparisonView comparisonData={data?.data || data} onReset={reset} />
                 ) : (
                   <>
-                    {/* 4 stat cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {overviewCards.map((card) => (
-                        <OverviewCard key={card.label} {...card} isLoading={false} />
-                      ))}
+                    {/* ── Tab Navigation Bar ───────────────────────────────────────── */}
+                    <div
+                      className="flex items-center gap-2 border-b pb-2 overflow-x-auto"
+                      style={{ borderColor: 'var(--color-border-light)' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('overview')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                          activeTab === 'overview'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'overview' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        Executive Overview
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('orchestrator')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === 'orchestrator'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'orchestrator' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        <GitBranch className="w-3.5 h-3.5" />
+                        <span>Agent Orchestration</span>
+                        <span className="text-[10px] font-mono px-1 rounded bg-blue-100 text-blue-800">
+                          DAG
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('repurposing')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === 'repurposing'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'repurposing' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        <span>Drug Repurposing</span>
+                        {data?.repurposing?.candidates?.length > 0 && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.2 rounded font-bold"
+                            style={{
+                              backgroundColor: '#f0fdfb',
+                              color: 'var(--color-teal)',
+                              border: '1px solid var(--color-teal-dim)',
+                            }}
+                          >
+                            {data.repurposing.candidates.length}
+                          </span>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('evidence')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                          activeTab === 'evidence'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'evidence' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        Clinical &amp; Evidence
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('compare')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === 'compare'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'compare' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        <Scale className="w-3.5 h-3.5" />
+                        <span>Head-to-Head Compare</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('exports')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === 'exports'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'exports' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        <FileCode className="w-3.5 h-3.5" />
+                        <span>Session &amp; Exports</span>
+                      </button>
                     </div>
 
-                    {/* Score + Executive */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <OpportunityCard
-                        score={data?.score}
-                        metadata={data?.metadata}
-                        isLoading={false}
-                      />
-                      <ExecutivePreview
-                        sections={executiveSections}
-                        moleculeName={data?.molecule_name || activeQuery}
-                        isLoading={false}
-                      />
-                    </div>
+                    {/* ── Tab 1: Executive Overview ──────────────────────────────── */}
+                    {activeTab === 'overview' && (
+                      <div className="space-y-5">
+                        {/* Domain Visual Header Banner */}
+                        <div 
+                          className="bg-white border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4"
+                          style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+                              <Award className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">
+                                Executive Commercial Intelligence Synthesis
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                Multidimensional evaluation across clinical pipelines, indexed scientific literature, market data, and intellectual property.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-50 border border-gray-200 text-gray-700">
+                              Target: {data?.molecule_name || activeQuery}
+                            </span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-teal-50 border border-teal-200 text-teal-700">
+                              Score: {data?.score?.overall_score?.toFixed(1) || '—'} / 100
+                            </span>
+                          </div>
+                        </div>
 
-                    <ResearchConfidenceCard scoreObj={data?.score} metadata={data?.metadata} />
-                    <ScoreBreakdownCard     scoreObj={data?.score} />
-                    <ResearchTimeline       context={data} />
+                        {/* 4 stat cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {overviewCards.map((card) => (
+                            <OverviewCard key={card.label} {...card} isLoading={false} />
+                          ))}
+                        </div>
+
+                        {/* Opportunity Score + Executive Summary */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <OpportunityCard
+                            score={data?.score}
+                            metadata={data?.metadata}
+                            isLoading={false}
+                          />
+                          <ExecutivePreview
+                            sections={executiveSections}
+                            moleculeName={data?.molecule_name || activeQuery}
+                            isLoading={false}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── Tab 2: Agent Orchestration (DAG Graph + Telemetry) ──────── */}
+                    {activeTab === 'orchestrator' && (
+                      <div className="space-y-5">
+                        <AgentOrchestratorView
+                          context={data?.data || data}
+                          lastEvent={lastEvent}
+                        />
+                      </div>
+                    )}
+
+                    {/* ── Tab 3: Drug Repurposing Discovery ──────────────────────── */}
+                    {activeTab === 'repurposing' && (
+                      <div className="space-y-5">
+                        {/* Domain Visual Header Banner */}
+                        <div 
+                          className="bg-white border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4"
+                          style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shrink-0">
+                              <Compass className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">
+                                Target-Disease Genetics &amp; Repurposing Discovery Studio
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                Maps biological targets (ChEMBL), subtracts approved disease ontologies (MONDO/EFO), and ranks candidate expansion indications (Open Targets).
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-50 border border-gray-200 text-gray-700">
+                              Open Targets &amp; ChEMBL REST
+                            </span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-teal-50 border border-teal-200 text-teal-700">
+                              {data?.repurposing?.candidates?.length || 0} Indications Ranked
+                            </span>
+                          </div>
+                        </div>
+
+                        <RepurposingCard
+                          repurposing={data?.repurposing}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                    )}
+
+                    {/* ── Tab 4: Clinical & Evidence Deep-Dive ───────────────────── */}
+                    {activeTab === 'evidence' && (
+                      <div className="space-y-6">
+                        {/* Domain Visual Header Banner */}
+                        <div 
+                          className="bg-white border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4"
+                          style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+                              <Activity className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">
+                                Clinical Validation &amp; Biomedical Evidence Registry
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                Verified clinical study records from ClinicalTrials.gov REST API v2 and Europe PMC peer-reviewed publications.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-50 border border-gray-200 text-gray-700">
+                              {data?.metadata?.total_trials || 0} Studies Indexed
+                            </span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 border border-blue-200 text-blue-700">
+                              {data?.metadata?.total_publications?.toLocaleString() || 0} Papers
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <ResearchConfidenceCard scoreObj={data?.score} metadata={data?.metadata} />
+                          <ScoreBreakdownCard scoreObj={data?.score} />
+                        </div>
+
+                        {/* Real Clinical Trials Table */}
+                        {data?.clinical?.trials?.length > 0 && (
+                          <div 
+                            className="bg-white border rounded-xl p-5 space-y-4"
+                            style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                          >
+                            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--color-border-light)' }}>
+                              <div>
+                                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700">
+                                  Verified Clinical Trials (ClinicalTrials.gov)
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  Live records returned directly from the official REST API v2
+                                </p>
+                              </div>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">
+                                {data.clinical.trials.length} Studies Listed
+                              </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs">
+                                <thead>
+                                  <tr className="border-b text-gray-400 font-semibold uppercase" style={{ borderColor: 'var(--color-border-light)' }}>
+                                    <th className="py-2.5 px-3">NCT ID</th>
+                                    <th className="py-2.5 px-3">Title / Condition</th>
+                                    <th className="py-2.5 px-3">Status</th>
+                                    <th className="py-2.5 px-3">Phase</th>
+                                    <th className="py-2.5 px-3 text-right">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {data.clinical.trials.map((trial, i) => (
+                                    <tr key={i} className="hover:bg-gray-50/60 transition-colors">
+                                      <td className="py-3 px-3 font-mono font-bold whitespace-nowrap">
+                                        <a
+                                          href={`https://clinicaltrials.gov/study/${trial.nct_id}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-700 hover:text-blue-900 hover:underline"
+                                          title="Open study record on ClinicalTrials.gov"
+                                        >
+                                          {trial.nct_id}
+                                        </a>
+                                      </td>
+                                      <td className="py-3 px-3 text-gray-800 font-medium max-w-md">
+                                        <div className="line-clamp-2">{trial.title || 'Clinical study record'}</div>
+                                        {trial.conditions?.length > 0 && (
+                                          <div className="text-[11px] text-gray-400 mt-0.5">
+                                            {trial.conditions.slice(0, 2).join(', ')}
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="py-3 px-3 whitespace-nowrap">
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-medium border bg-gray-50 text-gray-700 border-gray-200">
+                                          {trial.overall_status || trial.status || 'Active'}
+                                        </span>
+                                      </td>
+                                      <td className="py-3 px-3 whitespace-nowrap text-gray-600 font-medium">
+                                        {trial.phase || (trial.phases?.length ? trial.phases.join(', ') : 'Not Specified')}
+                                      </td>
+                                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                                        <div className="inline-flex items-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleCopyNct(trial.nct_id)}
+                                            className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded border bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors cursor-pointer"
+                                            title="Copy NCT ID"
+                                          >
+                                            {copiedNctId === trial.nct_id ? (
+                                              <>
+                                                <Check className="w-3 h-3 text-teal-600" />
+                                                <span className="text-teal-700 font-semibold">Copied</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Copy className="w-3 h-3 text-gray-400" />
+                                                <span>Copy ID</span>
+                                              </>
+                                            )}
+                                          </button>
+
+                                          <a
+                                            href={`https://clinicaltrials.gov/study/${trial.nct_id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-[11px] px-2 py-1 rounded border border-blue-100 bg-blue-50/50 hover:bg-blue-50"
+                                            title="Open ClinicalTrials.gov study"
+                                          >
+                                            Registry <ExternalLink className="w-3 h-3" />
+                                          </a>
+
+                                          <a
+                                            href={`https://pubmed.ncbi.nlm.nih.gov/?term=${trial.nct_id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium text-[11px] px-2 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50"
+                                            title="Search study on PubMed"
+                                          >
+                                            PubMed <ExternalLink className="w-3 h-3" />
+                                          </a>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        <ResearchTimeline context={data} />
+                      </div>
+                    )}
+
+                    {/* ── Tab 5: Head-to-Head Comparative Benchmark ──────────────── */}
+                    {activeTab === 'compare' && (
+                      <div className="space-y-5">
+                        {data?.mode === 'comparison' || data?.data?.molecule_a_name ? (
+                          <ComparisonView comparisonData={data?.data || data} onReset={reset} />
+                        ) : (
+                          <div 
+                            className="bg-white border rounded-xl p-6 space-y-6"
+                            style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                          >
+                            <div className="border-b pb-4 flex items-center justify-between flex-wrap gap-4" style={{ borderColor: 'var(--color-border-light)' }}>
+                              <div className="flex items-center gap-3.5">
+                                <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+                                  <Scale className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-bold text-gray-900">
+                                    Head-to-Head Comparative Benchmarking Arena
+                                  </h3>
+                                  <p className="text-xs text-gray-500">
+                                    Dual LangGraph orchestration evaluating differential clinical pipelines, literature citations, and market advantages.
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-gray-50 border border-gray-200 text-gray-700">
+                                Comparator Engine
+                              </span>
+                            </div>
+
+                            <form 
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const c = comparatorDrug.trim();
+                                if (c && !isLoading) {
+                                  const compoundA = data?.molecule_name || activeQuery;
+                                  setActiveQuery(`${compoundA} vs ${c}`);
+                                  runResearch(`${compoundA} vs ${c}`);
+                                }
+                              }}
+                              className="flex items-center gap-3"
+                            >
+                              <div className="relative flex-grow">
+                                <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={comparatorDrug}
+                                  onChange={(e) => setComparatorDrug(e.target.value)}
+                                  placeholder={`Enter competitor drug to benchmark against ${data?.molecule_name || activeQuery}...`}
+                                  className="w-full pl-9 pr-3 py-2.5 text-sm border rounded-lg bg-white focus:outline-none"
+                                  style={{ borderColor: 'var(--color-border)' }}
+                                />
+                              </div>
+                              <button
+                                type="submit"
+                                disabled={isLoading || !comparatorDrug.trim()}
+                                className="px-5 py-2.5 text-xs font-semibold rounded-lg text-white disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                                style={{ backgroundColor: 'var(--color-blue)' }}
+                              >
+                                {isLoading ? 'Analyzing...' : 'Run Benchmark'}
+                              </button>
+                            </form>
+
+                            <div className="space-y-2">
+                              <span className="text-xs text-gray-400 font-medium">
+                                Quick comparator suggestions:
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {['Semaglutide', 'Tirzepatide', 'Pembrolizumab', 'Nivolumab', 'Metformin', 'Ibuprofen']
+                                  .filter(item => item.toLowerCase() !== (data?.molecule_name || activeQuery).toLowerCase())
+                                  .slice(0, 4)
+                                  .map((comp) => (
+                                    <button
+                                      key={comp}
+                                      type="button"
+                                      onClick={() => {
+                                        setComparatorDrug(comp);
+                                        const compoundA = data?.molecule_name || activeQuery;
+                                        setActiveQuery(`${compoundA} vs ${comp}`);
+                                        runResearch(`${compoundA} vs ${comp}`);
+                                      }}
+                                      className="px-3 py-1.5 text-xs font-medium rounded-md border bg-gray-50 hover:bg-blue-50 hover:border-blue-300 text-gray-700 transition-colors cursor-pointer"
+                                      style={{ borderColor: 'var(--color-border)' }}
+                                    >
+                                      Compare with {comp}
+                                    </button>
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Tab 6: Session Execution & Exports ─────────────────────── */}
+                    {activeTab === 'exports' && (
+                      <div className="space-y-5">
+                        {/* Domain Visual Header Banner */}
+                        <div 
+                          className="bg-white border rounded-xl p-5 flex items-center justify-between flex-wrap gap-4"
+                          style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 shrink-0">
+                              <FileCode className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">
+                                Session Governance &amp; Multi-Format Export Dossier
+                              </h3>
+                              <p className="text-xs text-gray-500">
+                                Audit log of orchestrator execution latency, cache status, verified source provenance, and formal dossier downloads.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-teal-50 border border-teal-200 text-teal-700">
+                              Auditable Provenance
+                            </span>
+                          </div>
+                        </div>
+
+                        <SessionSummaryCard context={data} processingTimeSec={data?.processing_time_sec} />
+
+                        {/* Export actions card */}
+                        <div 
+                          className="bg-white border rounded-xl p-5 space-y-4"
+                          style={{ borderColor: 'var(--color-border)', boxShadow: 'var(--shadow-card)' }}
+                        >
+                          <div className="border-b pb-3" style={{ borderColor: 'var(--color-border-light)' }}>
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700">
+                              Export Executive Briefing &amp; Agent State
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              Generate formal dossier or extract raw JSON telemetry
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={handleDownloadPdf}
+                              disabled={isDownloadingPdf}
+                              className="px-4 py-2 text-xs font-semibold rounded-lg text-white flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                              style={{ backgroundColor: 'var(--color-blue)' }}
+                            >
+                              {isDownloadingPdf ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                              <span>Download PDF Briefing</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${data?.molecule_name || 'research'}_agent_state.json`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }}
+                              className="px-4 py-2 text-xs font-semibold rounded-lg border bg-white hover:bg-gray-50 text-gray-700 flex items-center gap-2 cursor-pointer"
+                              style={{ borderColor: 'var(--color-border)' }}
+                            >
+                              <FileCode className="w-3.5 h-3.5 text-gray-500" />
+                              <span>Download AgentState (JSON)</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
-                <SessionSummaryCard context={data} processingTimeSec={data?.processing_time_sec} />
               </div>
             )}
 

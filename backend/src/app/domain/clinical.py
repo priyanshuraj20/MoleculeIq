@@ -39,6 +39,7 @@ class ClinicalDomain:
     total_found:   int = 0
     source:        str = "ClinicalTrials.gov API v2"
     confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
+    provenance:    str = "real"
 
     @property
     def active_trials(self) -> List[ClinicalTrialRecord]:

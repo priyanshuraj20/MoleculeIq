@@ -17,6 +17,7 @@ from app.domain.literature import LiteratureDomain
 from app.domain.market import MarketInsightsDomain
 from app.domain.patent import PatentLandscapeDomain
 from app.domain.opportunity_score import OpportunityScore
+from app.domain.repurposing import RepurposingDomain
 
 
 @dataclass
@@ -38,6 +39,7 @@ class ResearchMetadata:
     at_risk_patents_count:      int             = 0
     fto_summary:                str             = "No patent data available"
     domains_available:          List[str]       = field(default_factory=list)
+    provenance_by_domain:       dict            = field(default_factory=dict)
 
     @property
     def has_meaningful_evidence(self) -> bool:
@@ -70,7 +72,8 @@ class ResearchContext:
     clinical:         Optional[ClinicalDomain]        = None
     literature:       Optional[LiteratureDomain]      = None
     market:           Optional[MarketInsightsDomain]  = None
-    patent:           Optional[PatentLandscapeDomain]  = None
+    patent:           Optional[PatentLandscapeDomain] = None
+    repurposing:      Optional[RepurposingDomain]     = None
     metadata:         ResearchMetadata                = field(default_factory=ResearchMetadata)
     score:            Optional[OpportunityScore]      = None
     created_at:       str                             = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

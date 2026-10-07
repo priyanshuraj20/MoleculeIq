@@ -60,7 +60,8 @@ class LiteratureAgent:
                     "[LiteratureAgent] No publication data returned for '%s' (took %.2fs)",
                     molecule_name, elapsed
                 )
-                state.literature = LiteratureDomain(molecule_name=molecule_name, publications=[], total_found=0)
+                prov = "unavailable" if not raw_response else "real"
+                state.literature = LiteratureDomain(molecule_name=molecule_name, publications=[], total_found=0, provenance=prov)
                 if not raw_response:
                     state.errors.append(f"Europe PMC API query failed or timed out for '{molecule_name}'")
                 return state
@@ -83,6 +84,7 @@ class LiteratureAgent:
                 publications=mapped_pubs,
                 total_found=total_found,
                 source="Europe PMC REST API",
+                provenance="real",
             )
 
             state.literature = domain_model
@@ -95,7 +97,7 @@ class LiteratureAgent:
             elapsed = round(time.monotonic() - start_time, 2)
             error_msg = f"LiteratureAgent encountered unexpected failure for '{molecule_name}': {str(exc)}"
             logger.error("[LiteratureAgent] %s (after %.2fs)", error_msg, elapsed)
-            state.literature = LiteratureDomain(molecule_name=molecule_name, publications=[], total_found=0)
+            state.literature = LiteratureDomain(molecule_name=molecule_name, publications=[], total_found=0, provenance="unavailable")
             state.errors.append(error_msg)
 
         return state

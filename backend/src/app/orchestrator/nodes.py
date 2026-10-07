@@ -18,6 +18,7 @@ from app.agents.clinical_agent import ClinicalTrialsAgent
 from app.agents.literature_agent import LiteratureAgent
 from app.agents.market_agent import MarketAgent
 from app.agents.patent_agent import PatentAgent
+from app.agents.repurposing_agent import RepurposingAgent
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ _clinical_agent   = ClinicalTrialsAgent()
 _literature_agent = LiteratureAgent()
 _market_agent     = MarketAgent()
 _patent_agent     = PatentAgent()
+_repurposing_agent = RepurposingAgent()
 
 
 async def clinical_node(state: AgentState) -> AgentState:
@@ -104,3 +106,23 @@ async def patent_node(state: AgentState) -> AgentState:
         logger.error("[Node: patent] %s (after %.2fs)", err_msg, elapsed)
         state.errors.append(err_msg)
         return state
+
+
+async def repurposing_node(state: AgentState) -> AgentState:
+    """
+    Node 5: Executes RepurposingAgent to discover candidate new indications ranked by target association & real evidence.
+    """
+    logger.info("[Node: repurposing] Executing for molecule '%s'", state.molecule_name)
+    start_time = time.monotonic()
+    try:
+        updated_state = await _repurposing_agent.execute(state)
+        elapsed = round(time.monotonic() - start_time, 2)
+        logger.info("[Node: repurposing] Completed in %.2fs", elapsed)
+        return updated_state
+    except Exception as exc:
+        elapsed = round(time.monotonic() - start_time, 2)
+        err_msg = f"Node 'repurposing' unhandled exception for '{state.molecule_name}': {str(exc)}"
+        logger.error("[Node: repurposing] %s (after %.2fs)", err_msg, elapsed)
+        state.errors.append(err_msg)
+        return state
+

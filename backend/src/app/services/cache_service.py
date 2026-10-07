@@ -99,7 +99,10 @@ class CacheService:
             data_to_store["cached"] = True
             data_to_store["cached_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-            json_str = json.dumps(data_to_store)
+            json_str = json.dumps(
+                data_to_store,
+                default=lambda o: o.isoformat() if hasattr(o, "isoformat") else str(o)
+            )
             success = await self._client.set(cache_key, json_str, ttl_seconds=ttl)
             if success:
                 logger.info("[CacheService] Successfully cached report for '%s' (key='%s', TTL=%ds)", query, cache_key, ttl)

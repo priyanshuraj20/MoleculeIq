@@ -74,7 +74,10 @@ class MarketRepository:
             domain.data_points.append(self._map_row(row))
 
         if domain.data_points:
+            domain.provenance = "simulated"
             logger.info("MarketRepository: loaded %d fallback rows for '%s'", len(domain.data_points), molecule_name)
+        else:
+            domain.provenance = "unavailable"
 
         return domain
 

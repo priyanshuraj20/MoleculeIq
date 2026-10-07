@@ -43,6 +43,7 @@ class PatentLandscapeDomain:
     patents:       list[PatentRecord] = field(default_factory=list)
     source:        str   = "Supabase / USPTO-EPO (mock)"
     confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
+    provenance:    str   = "simulated"
 
     @property
     def active_patents(self) -> list[PatentRecord]:
@@ -63,13 +64,15 @@ class PatentLandscapeDomain:
     def fto_summary(self) -> str:
         """
         High-level FTO assessment string for use in the report.
-        Example: "At Risk — 3 active constraint(s)"
+        For simulated data, legal-sounding claims such as 'Free to Operate' are removed.
         """
         if self.is_empty:
             return "No patent data available"
+        if self.provenance == "simulated":
+            return f"Simulated data ({len(self.patents)} synthetic filings) — unverified status"
         at_risk = self.at_risk_patents
         if not at_risk:
-            return "Free to Operate — no active blocking patents found"
+            return "No active blocking patents found"
         return f"At Risk — {len(at_risk)} active patent constraint(s)"
 
     @property

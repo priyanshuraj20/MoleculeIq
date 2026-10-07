@@ -56,6 +56,7 @@ class PatentAgent:
 
             # 2. Check if repository returned empty result
             if patent_domain.is_empty:
+                patent_domain.provenance = "unavailable"
                 warn_msg = f"No patent landscape data found in database for '{molecule_name}'"
                 logger.warning("[PatentAgent] %s (took %.2fs)", warn_msg, elapsed)
                 state.warnings.append(warn_msg)
@@ -75,7 +76,7 @@ class PatentAgent:
             elapsed = round(time.monotonic() - start_time, 2)
             warn_msg = f"PatentAgent encountered unexpected failure for '{molecule_name}': {str(exc)}"
             logger.error("[PatentAgent] %s (after %.2fs)", warn_msg, elapsed)
-            state.patent = PatentLandscapeDomain(molecule_name=molecule_name)
+            state.patent = PatentLandscapeDomain(molecule_name=molecule_name, provenance="unavailable")
             state.warnings.append(warn_msg)
 
         return state

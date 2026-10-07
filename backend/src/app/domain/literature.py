@@ -38,6 +38,7 @@ class LiteratureDomain:
     total_found:   int = 0
     source:        str = "Europe PMC REST API"
     confidence:    Optional[float] = None  # Scientifically computed during Hybrid Scoring (Phase 5)
+    provenance:    str = "real"
 
     @property
     def highly_cited_papers(self) -> List[LiteratureRecord]:

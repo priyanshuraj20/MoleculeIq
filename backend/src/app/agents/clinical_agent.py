@@ -60,7 +60,8 @@ class ClinicalTrialsAgent:
                     "[ClinicalTrialsAgent] No study data returned for '%s' (took %.2fs)",
                     molecule_name, elapsed
                 )
-                state.clinical_trials = ClinicalDomain(molecule_name=molecule_name, trials=[], total_found=0)
+                prov = "unavailable" if not raw_response else "real"
+                state.clinical_trials = ClinicalDomain(molecule_name=molecule_name, trials=[], total_found=0, provenance=prov)
                 if not raw_response:
                     state.errors.append(f"ClinicalTrials API query failed or timed out for '{molecule_name}'")
                 return state
@@ -84,6 +85,7 @@ class ClinicalTrialsAgent:
                 trials=mapped_trials,
                 total_found=total_found,
                 source="ClinicalTrials.gov API v2",
+                provenance="real",
             )
 
             state.clinical_trials = domain_model
@@ -96,7 +98,7 @@ class ClinicalTrialsAgent:
             elapsed = round(time.monotonic() - start_time, 2)
             error_msg = f"ClinicalTrialsAgent encountered unexpected failure for '{molecule_name}': {str(exc)}"
             logger.error("[ClinicalTrialsAgent] %s (after %.2fs)", error_msg, elapsed)
-            state.clinical_trials = ClinicalDomain(molecule_name=molecule_name, trials=[], total_found=0)
+            state.clinical_trials = ClinicalDomain(molecule_name=molecule_name, trials=[], total_found=0, provenance="unavailable")
             state.errors.append(error_msg)
 
         return state

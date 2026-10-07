@@ -24,11 +24,10 @@ class JSONReportService:
             {
                 "nct_id": t.nct_id,
                 "title": t.title,
-                "status": t.overall_status,
-                "phase": t.phase,
+                "status": t.status,
+                "phases": t.phases,
                 "conditions": t.conditions,
-                "interventions": t.interventions,
-                "sponsor": t.sponsor,
+                "lead_sponsor": t.lead_sponsor,
                 "start_date": t.start_date,
                 "completion_date": t.completion_date,
             }
@@ -41,7 +40,7 @@ class JSONReportService:
                 "title": p.title,
                 "authors": p.authors,
                 "journal": p.journal,
-                "publication_year": p.publication_year,
+                "pub_year": p.pub_year,
                 "pmid": p.pmid,
                 "doi": p.doi,
                 "citation_count": p.citation_count,
@@ -60,6 +59,7 @@ class JSONReportService:
                 "status": p.status,
                 "patent_type": p.patent_type,
                 "fto_status": p.fto_status,
+                "data_source": p.data_source,
             }
             for p in (context.patent.patents if context.patent else [])
         ]
@@ -73,9 +73,39 @@ class JSONReportService:
                 "market_size_usd_mn": m.market_size_usd_mn,
                 "cagr_percent": m.cagr_percent,
                 "competitor_count": m.competitor_count,
+                "data_source": m.data_source,
             }
             for m in (context.market.data_points if context.market else [])
         ]
+
+        # Format repurposing candidates
+        repurposing_candidates = []
+        if getattr(context, "repurposing", None) and context.repurposing.candidates:
+            for c in context.repurposing.candidates:
+                repurposing_candidates.append({
+                    "disease_name": c.disease_name,
+                    "disease_id": c.disease_id,
+                    "association_score": c.association_score,
+                    "targets": c.targets,
+                    "why_it_could_work": c.why_it_could_work,
+                    "evidence_trials_count": c.evidence_trials_count,
+                    "evidence_papers_count": c.evidence_papers_count,
+                    "evidence": [
+                        {
+                            "type": ev.type,
+                            "id": ev.id,
+                            "title": ev.title,
+                            "url": ev.url
+                        }
+                        for ev in c.evidence
+                    ]
+                })
+
+        clin_prov = getattr(context.clinical, "provenance", "unavailable") if context.clinical else "unavailable"
+        lit_prov = getattr(context.literature, "provenance", "unavailable") if context.literature else "unavailable"
+        pat_prov = getattr(context.patent, "provenance", "unavailable") if context.patent else "unavailable"
+        mkt_prov = getattr(context.market, "provenance", "unavailable") if context.market else "unavailable"
+        rep_prov = getattr(context.repurposing, "provenance", "unavailable") if getattr(context, "repurposing", None) else "unavailable"
 
         return {
             "app_name": "MoleculeIQ Enterprise",
@@ -95,12 +125,15 @@ class JSONReportService:
                 "patent_subscore": score_data.get("patent_score", 0.0),
                 "literature_subscore": score_data.get("research_score", 0.0),
                 "category_weights": score_data.get("category_weights", {}),
+                "real_sources_count": score_data.get("real_sources_count", 2),
+                "total_sources_count": score_data.get("total_sources_count", 4),
+                "data_sources_summary": score_data.get("data_sources_summary", "Based on 2 of 4 data sources"),
                 "explanations": score_data.get("score_breakdown", {}).get("explanation", [])
             },
             "executive_summary": {
                 "highlights": [
-                    f"Clinical Activity: {meta.active_trials_count} active / {meta.completed_trials_count} completed trials",
-                    f"Market Opportunity: ${meta.global_market_size_usd_mn:,.1f}M USD global market size" if meta.global_market_size_usd_mn else "Market Data: N/A",
+                    f"Clinical Activity: {meta.active_trials_count} active / {meta.completed_trials_count} completed trials (Verified)",
+                    f"Market Opportunity: ${meta.global_market_size_usd_mn:,.1f}M USD global market size (Simulated estimate)" if meta.global_market_size_usd_mn else "Market Data: N/A",
                     f"Patent Landscape: {meta.fto_summary}"
                 ],
                 "risks": [
@@ -115,35 +148,45 @@ class JSONReportService:
                 ]
             },
             "clinical_analysis": {
+                "provenance": clin_prov,
                 "trials_count": len(trials),
                 "active_trials": meta.active_trials_count,
                 "completed_trials": meta.completed_trials_count,
                 "trials": trials
             },
             "literature_analysis": {
+                "provenance": lit_prov,
                 "publications_count": len(pubs),
                 "highly_cited_count": meta.highly_cited_papers_count,
                 "publications": pubs
             },
             "patent_analysis": {
+                "provenance": pat_prov,
                 "patent_count": len(patents),
                 "fto_summary": meta.fto_summary,
                 "at_risk_count": meta.at_risk_patents_count,
                 "patents": patents
             },
             "market_analysis": {
+                "provenance": mkt_prov,
                 "global_market_size_usd_mn": meta.global_market_size_usd_mn,
                 "data_points": market_points
             },
+            "repurposing_analysis": {
+                "provenance": rep_prov,
+                "candidates_count": len(repurposing_candidates),
+                "candidates": repurposing_candidates
+            },
             "sources": [
-                {"name": "ClinicalTrials.gov API v2", "url": "https://clinicaltrials.gov"},
-                {"name": "Europe PMC REST API", "url": "https://europepmc.org"},
-                {"name": "USPTO & EPO Patent Registry", "url": "https://patents.google.com"},
-                {"name": "IQVIA MIDAS Database", "url": "https://www.iqvia.com"}
+                {"name": "ClinicalTrials.gov API v2", "url": "https://clinicaltrials.gov", "provenance": clin_prov},
+                {"name": "Europe PMC REST API", "url": "https://europepmc.org", "provenance": lit_prov},
+                {"name": "Open Targets Platform & ChEMBL", "url": "https://platform.opentargets.org", "provenance": rep_prov},
+                {"name": "USPTO & EPO Patent Registry", "url": "https://patents.google.com", "provenance": pat_prov},
+                {"name": "IQVIA MIDAS Database", "url": "https://www.iqvia.com", "provenance": mkt_prov}
             ],
             "processing_metadata": {
                 "processing_time_sec": processing_time_sec,
-                "agents_executed": ["ClinicalTrialsAgent", "LiteratureAgent", "MarketAgent", "PatentAgent"],
+                "agents_executed": ["ClinicalTrialsAgent", "LiteratureAgent", "MarketAgent", "PatentAgent", "RepurposingAgent"],
                 "domains_available": meta.domains_available,
                 "search_queries_generated": [context.molecule_name]
             }

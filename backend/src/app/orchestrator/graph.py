@@ -61,6 +61,7 @@ async def run_research_pipeline(molecule_name: str) -> AgentState:
             literature=final_state_dict_or_obj.get("literature"),
             market=final_state_dict_or_obj.get("market"),
             patent=final_state_dict_or_obj.get("patent"),
+            repurposing=final_state_dict_or_obj.get("repurposing"),
             errors=final_state_dict_or_obj.get("errors", []),
             warnings=final_state_dict_or_obj.get("warnings", []),
         )
