@@ -251,8 +251,14 @@ export default function ResearchPage() {
     setTimeout(() => setCopiedNctId(null), 2000);
   };
 
-  const { status, statusMessage, lastEvent, data, errorMessage, runResearch } = useResearch();
+  const { status, statusMessage, lastEvent, data, errorMessage, runResearch, reset } = useResearch();
   const resultsRef = useRef(null);
+
+  const handleResetSearch = () => {
+    if (reset) reset();
+    setActiveQuery('');
+    setInputVal('');
+  };
 
   useEffect(() => {
     if (initialQuery.trim()) {
@@ -528,7 +534,7 @@ export default function ResearchPage() {
               <div ref={resultsRef} className="space-y-6">
 
                 {data?.mode === 'comparison' || data?.data?.molecule_a_name ? (
-                  <ComparisonView comparisonData={data?.data || data} onReset={reset} />
+                  <ComparisonView comparisonData={data?.data || data} onReset={handleResetSearch} />
                 ) : (
                   <>
                     {/* ── Tab Navigation Bar ───────────────────────────────────────── */}
@@ -902,7 +908,7 @@ export default function ResearchPage() {
                     {activeTab === 'compare' && (
                       <div className="space-y-5">
                         {data?.mode === 'comparison' || data?.data?.molecule_a_name ? (
-                          <ComparisonView comparisonData={data?.data || data} onReset={reset} />
+                          <ComparisonView comparisonData={data?.data || data} onReset={handleResetSearch} />
                         ) : (
                           <div 
                             className="bg-white border rounded-xl p-6 space-y-6"
