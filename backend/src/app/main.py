@@ -1,7 +1,7 @@
 """
 MoleculeIQ FastAPI Application Gateway.
 """
-
+"""Its the Entry point of the project || which handles the request to the server """
 import logging
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware

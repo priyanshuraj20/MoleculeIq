@@ -18,14 +18,18 @@ export default function ComparisonView({ comparisonData, onReset }) {
     executive_summary,
   } = comparisonData;
 
-  const scoreA = molecule_a_context?.score?.overall_score ?? 0;
-  const scoreB = molecule_b_context?.score?.overall_score ?? 0;
+  const scoreA = (molecule_a_context?.score?.overall_score != null && !isNaN(molecule_a_context.score.overall_score))
+    ? Number(molecule_a_context.score.overall_score)
+    : 0;
+  const scoreB = (molecule_b_context?.score?.overall_score != null && !isNaN(molecule_b_context.score.overall_score))
+    ? Number(molecule_b_context.score.overall_score)
+    : 0;
 
   const winnerName =
     overall_winner === 'molecule_a'
-      ? molecule_a_name
+      ? (molecule_a_name || 'Compound A')
       : overall_winner === 'molecule_b'
-      ? molecule_b_name
+      ? (molecule_b_name || 'Compound B')
       : 'Equal Rating';
 
   const comparisons = [
@@ -56,7 +60,7 @@ export default function ComparisonView({ comparisonData, onReset }) {
               </span>
             </div>
             <h2 className="text-xl font-bold mt-1 text-gray-900">
-              {molecule_a_name} <span className="text-gray-400 font-normal">vs</span> {molecule_b_name}
+              {molecule_a_name || 'Molecule A'} <span className="text-gray-400 font-normal">vs</span> {molecule_b_name || 'Molecule B'}
             </h2>
           </div>
           <div className="flex items-center gap-4">
@@ -97,7 +101,7 @@ export default function ComparisonView({ comparisonData, onReset }) {
             }`}
           >
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-base text-gray-900">{molecule_a_name}</h3>
+              <h3 className="font-semibold text-base text-gray-900">{molecule_a_name || 'Molecule A'}</h3>
               {overall_winner === 'molecule_a' && (
                 <span className="px-2 py-0.5 text-xs bg-teal-50 text-teal-700 border border-teal-200 rounded font-medium">
                   Highest Overall
@@ -105,10 +109,10 @@ export default function ComparisonView({ comparisonData, onReset }) {
               )}
             </div>
             <div className="text-2xl font-bold text-gray-900">
-              {scoreA.toFixed(1)} <span className="text-xs font-normal text-gray-500">/ 100</span>
+              {Number(scoreA).toFixed(1)} <span className="text-xs font-normal text-gray-500">/ 100</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Data Confidence: {molecule_a_context?.score?.confidence_score != null ? `${molecule_a_context.score.confidence_score.toFixed(0)}%` : 'N/A'}
+              Data Confidence: {molecule_a_context?.score?.confidence_score != null ? `${Number(molecule_a_context.score.confidence_score).toFixed(0)}%` : 'N/A'}
             </p>
           </div>
 
@@ -120,7 +124,7 @@ export default function ComparisonView({ comparisonData, onReset }) {
             }`}
           >
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-base text-gray-900">{molecule_b_name}</h3>
+              <h3 className="font-semibold text-base text-gray-900">{molecule_b_name || 'Molecule B'}</h3>
               {overall_winner === 'molecule_b' && (
                 <span className="px-2 py-0.5 text-xs bg-teal-50 text-teal-700 border border-teal-200 rounded font-medium">
                   Highest Overall
@@ -128,10 +132,10 @@ export default function ComparisonView({ comparisonData, onReset }) {
               )}
             </div>
             <div className="text-2xl font-bold text-gray-900">
-              {scoreB.toFixed(1)} <span className="text-xs font-normal text-gray-500">/ 100</span>
+              {Number(scoreB).toFixed(1)} <span className="text-xs font-normal text-gray-500">/ 100</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Data Confidence: {molecule_b_context?.score?.confidence_score != null ? `${molecule_b_context.score.confidence_score.toFixed(0)}%` : 'N/A'}
+              Data Confidence: {molecule_b_context?.score?.confidence_score != null ? `${Number(molecule_b_context.score.confidence_score).toFixed(0)}%` : 'N/A'}
             </p>
           </div>
         </div>
@@ -153,9 +157,9 @@ export default function ComparisonView({ comparisonData, onReset }) {
           {comparisons.map((item, idx) => (
             <div key={idx} className="py-4 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-900">{item.domain_name}</span>
+                <span className="text-sm font-semibold text-gray-900">{item.domain_name || `Domain ${idx + 1}`}</span>
                 <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-200">
-                  Advantage: {item.winner === 'molecule_a' ? molecule_a_name : item.winner === 'molecule_b' ? molecule_b_name : 'Parity'}
+                  Advantage: {item.winner === 'molecule_a' ? (molecule_a_name || 'Compound A') : item.winner === 'molecule_b' ? (molecule_b_name || 'Compound B') : 'Parity'}
                 </span>
               </div>
 
@@ -167,8 +171,8 @@ export default function ComparisonView({ comparisonData, onReset }) {
                       : 'bg-gray-50 border-gray-200 text-gray-800'
                   }`}
                 >
-                  <span className="text-xs text-gray-500 font-medium block">{molecule_a_name}</span>
-                  <span className="font-semibold text-gray-900">{item.molecule_a_val}</span>
+                  <span className="text-xs text-gray-500 font-medium block">{molecule_a_name || 'Molecule A'}</span>
+                  <span className="font-semibold text-gray-900">{typeof item.molecule_a_val === 'object' ? JSON.stringify(item.molecule_a_val) : String(item.molecule_a_val ?? 'N/A')}</span>
                 </div>
                 <div 
                   className={`p-3 rounded-lg border ${
@@ -177,12 +181,12 @@ export default function ComparisonView({ comparisonData, onReset }) {
                       : 'bg-gray-50 border-gray-200 text-gray-800'
                   }`}
                 >
-                  <span className="text-xs text-gray-500 font-medium block">{molecule_b_name}</span>
-                  <span className="font-semibold text-gray-900">{item.molecule_b_val}</span>
+                  <span className="text-xs text-gray-500 font-medium block">{molecule_b_name || 'Molecule B'}</span>
+                  <span className="font-semibold text-gray-900">{typeof item.molecule_b_val === 'object' ? JSON.stringify(item.molecule_b_val) : String(item.molecule_b_val ?? 'N/A')}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-600 mt-1">{item.summary}</p>
+              <p className="text-xs text-gray-600 mt-1">{typeof item.summary === 'object' ? JSON.stringify(item.summary) : String(item.summary ?? '')}</p>
             </div>
           ))}
         </div>
@@ -199,10 +203,12 @@ export default function ComparisonView({ comparisonData, onReset }) {
             Executive Synthesis &amp; Strategic Recommendation
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">
-            {executive_summary.strategic_recommendation}
+            {typeof executive_summary.strategic_recommendation === 'object'
+              ? JSON.stringify(executive_summary.strategic_recommendation)
+              : String(executive_summary.strategic_recommendation ?? '')}
           </p>
 
-          {executive_summary.key_differentiators?.length > 0 && (
+          {Array.isArray(executive_summary.key_differentiators) && executive_summary.key_differentiators.length > 0 && (
             <div 
               className="mt-4 pt-3 border-t space-y-2"
               style={{ borderColor: 'var(--color-border-light)' }}
@@ -214,7 +220,7 @@ export default function ComparisonView({ comparisonData, onReset }) {
                 {executive_summary.key_differentiators.map((diff, i) => (
                   <li key={i} className="text-xs text-gray-700 flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
-                    <span>{diff}</span>
+                    <span>{typeof diff === 'object' ? JSON.stringify(diff) : String(diff)}</span>
                   </li>
                 ))}
               </ul>
