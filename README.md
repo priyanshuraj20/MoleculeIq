@@ -28,7 +28,13 @@ Traditional pharmaceutical research requires manually searching fragmented datab
   - **Drug Repurposing Studio**: Candidate new indications discovered via target genetics (Open Targets + ChEMBL), mechanism hypothesis, association scoring, and cross-referenced citations.
   - **Clinical & Evidence Explorer**: Verified ClinicalTrials.gov studies table with direct registry links, scientific literature, data confidence breakdown, and chronological milestone timeline.
   - **Head-to-Head Compare**: Deterministic comparative benchmark studio evaluating differential clinical pipelines, literature citations, and market advantages between competing molecules.
+  - **Medicine Suggestions**: Feasible manufactured drug formulations, delivery routes (oral, injectable, transdermal, nanoparticles), biological action mechanisms, and clinical/commercial advantages for the researched molecule.
   - **Session & Exports**: Session execution audit, one-click PDF dossier generation, and raw `AgentState` JSON download.
+- **Smart Contextual Navigation**: Global, history-aware back navigation. Exiting comparison mode (`A vs B`) gracefully returns to primary compound `A` research state rather than resetting to the root home page, with tab states fully synchronized in the browser history.
+
+### Medicine Formulation Discovery
+- **Feasible Drug Formulations**: Analyzes chemical molecules to identify what real medications, modified-release forms (XR/ER), fixed-dose combinations (FDCs), and targeted delivery formulations can be manufactured.
+- **Multi-Tiered Generation Engine**: Backed by curated benchmark pharmaceutical formulations, Google Gemini LLM formulation chemist prompts, and deterministic synthesis fallbacks.
 
 ### Performance & Security
 - **Redis Caching**: Upstash Redis caching with 24-hour TTL (`moleculeiq:report:{compound}`) for instant cache hits.
@@ -141,7 +147,7 @@ MoleculeIQ/
 │   ├── src/
 │   │   └── app/
 │   │       ├── agents/                 # Clinical, Literature, Market, Patent, Repurposing agents
-│   │       ├── api/                    # REST routes (/research, /auth, /stream)
+│   │       ├── api/                    # REST routes (/research, /auth, /stream, /medical-suggestion)
 │   │       ├── auth/                   # JWT, Google OAuth service & dependencies
 │   │       ├── core/                   # System settings & configuration
 │   │       ├── domain/                 # Domain entities (Clinical, Repurposing, Score, Context)
@@ -152,9 +158,10 @@ MoleculeIQ/
 └── frontend/
     ├── src/
     │   ├── auth/                       # AuthContext, GoogleLoginButton & ProtectedRoute
-    │   ├── components/                 # UI cards (RepurposingCard, OverviewCard, OpportunityCard)
-    │   ├── pages/                      # LandingPage, ResearchPage & ReportPage
-    │   └── services/                   # SSE stream & API fetch services
+    │   ├── components/                 # UI cards (RepurposingCard, OverviewCard, BackButton, ComparisonView)
+    │   │   └── dashboard/              # Tab components (MedicineSuggestionsTab, RepurposingCard)
+    │   ├── pages/                      # LandingPage, ResearchPage, ReportPage, MedicalSuggestionPage
+    │   └── services/                   # SSE stream, Axios client & API fetch services
     └── package.json
 ```
 
@@ -246,6 +253,7 @@ Visit `http://localhost:5173` in your browser.
 | `POST` | `/api/research` | JWT | Executes full research pipeline for a compound |
 | `GET` | `/api/v1/research/stream` | JWT | SSE stream endpoint for real-time pipeline events |
 | `POST` | `/api/v1/research/compare` | JWT | Executes parallel research and synthesizes side-by-side comparison report |
+| `GET` | `/api/v1/medical-suggestion/` | Public | Retrieves feasible manufactured drug formulations and clinical suggestions for a target molecule |
 | `POST` | `/api/research/json` | JWT | Generates downloadable JSON research export |
 | `GET` | `/api/research/pdf` | JWT | Synthesizes executive PDF report |
 | `GET` | `/health` | Public | Health check endpoint |
