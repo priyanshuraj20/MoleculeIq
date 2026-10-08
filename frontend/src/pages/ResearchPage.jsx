@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Activity,
   BookOpen,
@@ -21,6 +21,8 @@ import {
   Clock,
   Copy,
   Check,
+  Pill,
+  ArrowUpRight,
 } from 'lucide-react';
 
 import { useResearch }           from '../hooks/useResearch';
@@ -649,6 +651,16 @@ export default function ResearchPage() {
                         <FileCode className="w-3.5 h-3.5" />
                         <span>Session &amp; Exports</span>
                       </button>
+
+                      <Link
+                        to={`/suggestions?q=${encodeURIComponent(data?.molecule_name || activeQuery)}`}
+                        className="px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ml-auto text-blue-700 bg-blue-50/70 border-blue-200 hover:bg-blue-100 shrink-0"
+                        title="View feasible manufactured drug formulations and medicine possibilities"
+                      >
+                        <Pill className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Medicine Suggestions</span>
+                        <ArrowUpRight className="w-3 h-3 text-blue-500" />
+                      </Link>
                     </div>
 
                     {/* ── Tab 1: Executive Overview ──────────────────────────────── */}

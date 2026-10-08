@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.api import research_router, stream_router
+from app.api import research_router, stream_router, medical_suggestion_router
 from app.auth import auth_router
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(research_router)
 app.include_router(stream_router)
+app.include_router(medical_suggestion_router)
 
 
 @app.exception_handler(Exception)

@@ -4,6 +4,7 @@ import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import ResearchPage from './pages/ResearchPage';
 import ReportPage from './pages/ReportPage';
+import MedicalSuggestionPage from './pages/MedicalSuggestionPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './auth/ProtectedRoute';
 
@@ -18,6 +19,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ResearchPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="suggestions"
+            element={
+              <ProtectedRoute>
+                <MedicalSuggestionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="medical-suggestions"
+            element={
+              <ProtectedRoute>
+                <MedicalSuggestionPage />
               </ProtectedRoute>
             }
           />
