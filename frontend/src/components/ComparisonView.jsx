@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, CheckCircle2, ArrowRight, ShieldCheck, TrendingUp, Activity, RotateCcw } from 'lucide-react';
+import { Award, CheckCircle2, ArrowRight, ArrowLeft, ShieldCheck, TrendingUp, Activity, RotateCcw } from 'lucide-react';
 
 export default function ComparisonView({ comparisonData, onReset }) {
   if (!comparisonData) return null;
@@ -76,6 +76,20 @@ export default function ComparisonView({ comparisonData, onReset }) {
                 )}
               </div>
             </div>
+            {molecule_a_name && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = `/research?q=${encodeURIComponent(molecule_a_name)}`;
+                }}
+                className="px-3 py-1.5 text-xs font-semibold border rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                style={{ borderColor: '#bfdbfe' }}
+                title={`Return to single-molecule research for ${molecule_a_name}`}
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-blue-600" />
+                <span>Back to {molecule_a_name}</span>
+              </button>
+            )}
             {onReset && (
               <button
                 type="button"

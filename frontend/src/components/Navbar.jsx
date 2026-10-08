@@ -45,25 +45,6 @@ export default function Navbar() {
           />
         </Link>
 
-        {/* ── Center: Navigation Links ──────────────────────────── */}
-        {isAuthenticated && (
-          <nav className="hidden md:flex items-center gap-1.5">
-            <Link
-              to="/research"
-              className="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-700 hover:text-blue-700 hover:bg-slate-50 transition-colors"
-            >
-              Research Pipeline
-            </Link>
-            <Link
-              to="/suggestions"
-              className="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-700 hover:text-blue-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-              <span>Medicine Suggestions</span>
-            </Link>
-          </nav>
-        )}
-
         {/* ── Right: Auth Section ────────────────────────────────── */}
         <div className="flex items-center gap-3 shrink-0">
           {!isAuthenticated ? (

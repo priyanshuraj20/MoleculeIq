@@ -38,6 +38,7 @@ import ResearchConfidenceCard    from '../components/ResearchConfidenceCard';
 import ScoreBreakdownCard        from '../components/ScoreBreakdownCard';
 import ResearchTimeline          from '../components/ResearchTimeline';
 import SessionSummaryCard        from '../components/SessionSummaryCard';
+import MedicineSuggestionsTab    from '../components/dashboard/MedicineSuggestionsTab';
 
 const EXAMPLES = ['Metformin', 'Ibuprofen', 'Pembrolizumab', 'Semaglutide'];
 
@@ -236,12 +237,13 @@ function PipelineStep({ label, done, visible, provenance = 'real' }) {
 }
 
 export default function ResearchPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery   = searchParams.get('q') ?? '';
+  const initialTab     = searchParams.get('tab') || 'overview';
 
   const [inputVal,    setInputVal]    = useState(initialQuery);
   const [activeQuery, setActiveQuery] = useState(initialQuery);
-  const [activeTab,   setActiveTab]   = useState('overview');
+  const [activeTab,   setActiveTab]   = useState(initialTab);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [comparatorDrug,   setComparatorDrug]   = useState('');
   const [copiedNctId,      setCopiedNctId]      = useState(null);
@@ -260,6 +262,18 @@ export default function ResearchPage() {
     if (reset) reset();
     setActiveQuery('');
     setInputVal('');
+    setSearchParams({});
+  };
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    const nextParams = new URLSearchParams(searchParams);
+    if (newTab === 'overview') {
+      nextParams.delete('tab');
+    } else {
+      nextParams.set('tab', newTab);
+    }
+    setSearchParams(nextParams);
   };
 
   useEffect(() => {
@@ -269,6 +283,21 @@ export default function ResearchPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sync tab and search from URL changes (handles browser Back and Forward navigation)
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'overview';
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+    const qFromUrl = searchParams.get('q') || '';
+    if (qFromUrl && qFromUrl !== activeQuery) {
+      setInputVal(qFromUrl);
+      setActiveQuery(qFromUrl);
+      runResearch(qFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     if (status === 'success' || status === 'error') {
@@ -292,6 +321,9 @@ export default function ResearchPage() {
     const cleaned = inputVal.trim();
     if (cleaned && !isLoading) {
       setActiveQuery(cleaned);
+      const nextParams = new URLSearchParams();
+      nextParams.set('q', cleaned);
+      setSearchParams(nextParams);
       runResearch(cleaned);
     }
   };
@@ -299,6 +331,9 @@ export default function ResearchPage() {
   const handleExampleSelect = (mol) => {
     setInputVal(mol);
     setActiveQuery(mol);
+    const nextParams = new URLSearchParams();
+    nextParams.set('q', mol);
+    setSearchParams(nextParams);
     runResearch(mol);
   };
 
@@ -546,7 +581,7 @@ export default function ResearchPage() {
                     >
                       <button
                         type="button"
-                        onClick={() => setActiveTab('overview')}
+                        onClick={() => handleTabChange('overview')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
                           activeTab === 'overview'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -561,7 +596,7 @@ export default function ResearchPage() {
 
                       <button
                         type="button"
-                        onClick={() => setActiveTab('orchestrator')}
+                        onClick={() => handleTabChange('orchestrator')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
                           activeTab === 'orchestrator'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -580,7 +615,7 @@ export default function ResearchPage() {
 
                       <button
                         type="button"
-                        onClick={() => setActiveTab('repurposing')}
+                        onClick={() => handleTabChange('repurposing')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
                           activeTab === 'repurposing'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -607,7 +642,7 @@ export default function ResearchPage() {
 
                       <button
                         type="button"
-                        onClick={() => setActiveTab('evidence')}
+                        onClick={() => handleTabChange('evidence')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
                           activeTab === 'evidence'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -622,7 +657,7 @@ export default function ResearchPage() {
 
                       <button
                         type="button"
-                        onClick={() => setActiveTab('compare')}
+                        onClick={() => handleTabChange('compare')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
                           activeTab === 'compare'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -638,7 +673,23 @@ export default function ResearchPage() {
 
                       <button
                         type="button"
-                        onClick={() => setActiveTab('exports')}
+                        onClick={() => handleTabChange('suggestions')}
+                        className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === 'suggestions'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'bg-transparent border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          borderColor: activeTab === 'suggestions' ? 'var(--color-blue)' : 'transparent',
+                        }}
+                      >
+                        <Pill className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Medicine Suggestions</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleTabChange('exports')}
                         className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors cursor-pointer flex items-center gap-1.5 ${
                           activeTab === 'exports'
                             ? 'bg-white text-blue-700 shadow-sm'
@@ -651,16 +702,6 @@ export default function ResearchPage() {
                         <FileCode className="w-3.5 h-3.5" />
                         <span>Session &amp; Exports</span>
                       </button>
-
-                      <Link
-                        to={`/suggestions?q=${encodeURIComponent(data?.molecule_name || activeQuery)}`}
-                        className="px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ml-auto text-blue-700 bg-blue-50/70 border-blue-200 hover:bg-blue-100 shrink-0"
-                        title="View feasible manufactured drug formulations and medicine possibilities"
-                      >
-                        <Pill className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Medicine Suggestions</span>
-                        <ArrowUpRight className="w-3 h-3 text-blue-500" />
-                      </Link>
                     </div>
 
                     {/* ── Tab 1: Executive Overview ──────────────────────────────── */}
@@ -951,8 +992,14 @@ export default function ResearchPage() {
                                 const c = comparatorDrug.trim();
                                 if (c && !isLoading) {
                                   const compoundA = data?.molecule_name || activeQuery;
-                                  setActiveQuery(`${compoundA} vs ${c}`);
-                                  runResearch(`${compoundA} vs ${c}`);
+                                  const compQuery = `${compoundA} vs ${c}`;
+                                  setActiveQuery(compQuery);
+                                  setInputVal(compQuery);
+                                  const nextParams = new URLSearchParams();
+                                  nextParams.set('q', compQuery);
+                                  nextParams.set('tab', 'compare');
+                                  setSearchParams(nextParams);
+                                  runResearch(compQuery);
                                 }
                               }}
                               className="flex items-center gap-3"
@@ -1009,7 +1056,12 @@ export default function ResearchPage() {
                       </div>
                     )}
 
-                    {/* ── Tab 6: Session Execution & Exports ─────────────────────── */}
+                    {/* ── Tab 6: Medicine & Drug Formulation Suggestions ─────────── */}
+                    {activeTab === 'suggestions' && (
+                      <MedicineSuggestionsTab molecule={data?.molecule_name || activeQuery} />
+                    )}
+
+                    {/* ── Tab 7: Session Execution & Exports ─────────────────────── */}
                     {activeTab === 'exports' && (
                       <div className="space-y-5">
                         {/* Domain Visual Header Banner */}
