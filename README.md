@@ -1,6 +1,6 @@
 # MoleculeIQ
 
-### Pharmaceutical Research & Drug Repurposing Intelligence Platform
+### AI-Powered Pharmaceutical Research Platform 
 
 MoleculeIQ orchestrates specialized research agents across clinical trial registries, scientific literature, target-disease genetics, patent databases, and market intelligence to generate executive-grade research and drug repurposing dossiers.
 
