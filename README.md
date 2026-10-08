@@ -6,35 +6,20 @@ MoleculeIQ orchestrates specialized research agents across clinical trial regist
 
 ## Project Overview
 
-Traditional pharmaceutical research requires manually searching fragmented databases across clinical trials, scientific literature, target genetics, patent offices, and financial markets. MoleculeIQ unifies these workflows by deploying 5 specialized worker agents within a LangGraph execution graph to analyze pharmaceutical compounds, evaluate new repurposing indications, and synthesize multi-domain evidence into a deterministic Commercial Opportunity Score (0–100), executive summaries, PDF reports, and structured JSON exports.
+Traditional pharmaceutical research requires manually searching fragmented databases . MoleculeIQ unifies these workflows by deploying 5 specialized worker agents within a LangGraph execution graph to analyze pharmaceutical compounds, evaluate new repurposing indications, and synthesize multi-domain evidence into a deterministic Commercial Opportunity Score (0–100), executive summaries, PDF reports, and structured JSON exports.
 
 ## Key Features
 
 ### Multi-Agent Research Pipeline
 - **Clinical Evidence Agent**: Queries ClinicalTrials.gov API v2 for study phases, recruitment status, and active trials.
 - **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers.
-- **Drug Repurposing Discovery Agent**: Discovers candidate new indications via Open Targets Platform GraphQL and ChEMBL. Filters out already-approved diseases using standardized disease ontology IDs (MONDO/EFO), ranks candidates by target-disease association scores, and cross-references real supporting evidence (ClinicalTrials.gov NCT IDs and PubMed PMIDs).
-- **Patent Landscape Agent**: Reviews patent filings and status horizons (labeled with simulated provenance; legal conclusions such as "Free to Operate" are suppressed on simulated records).
-- **Market Intelligence Agent**: Estimates commercial market size and 5-year CAGR (labeled with simulated provenance).
+- **Drug Repurposing Discovery Agent**: Discovers candidate new indications.
+- **Patent Landscape Agent**: Reviews patent filings.
+- **Market Intelligence Agent**: Estimates commercial market size.
 
 ### Data Provenance & Honest Scoring
 - **Transparent Provenance Labels**: Every domain carries an explicit provenance tag (`real`, `simulated`, or `unavailable`).
 - **Normalized Opportunity Scoring**: Simulated components are excluded from the composite opportunity score; weights are renormalized across verified real sources (e.g., Clinical and Literature), with the UI explicitly indicating `"Based on 2 of 4 data sources"`.
-
-### Workspace Navigation & Layout
-- **Multi-Tab Workspace**: Information is organized into focused enterprise views:
-  - **Executive Overview**: High-level Commercial Opportunity Score (0–100), 4 core domain metric cards, and synthesized executive preview.
-  - **Agent Orchestration (DAG)**: Interactive LangGraph StateGraph execution graph, active agent node telemetry, endpoint inspection, latency metrics, and state mutation audit.
-  - **Drug Repurposing Studio**: Candidate new indications discovered via target genetics (Open Targets + ChEMBL), mechanism hypothesis, association scoring, and cross-referenced citations.
-  - **Clinical & Evidence Explorer**: Verified ClinicalTrials.gov studies table with direct registry links, scientific literature, data confidence breakdown, and chronological milestone timeline.
-  - **Head-to-Head Compare**: Deterministic comparative benchmark studio evaluating differential clinical pipelines, literature citations, and market advantages between competing molecules.
-  - **Medicine Suggestions**: Feasible manufactured drug formulations, delivery routes (oral, injectable, transdermal, nanoparticles), biological action mechanisms, and clinical/commercial advantages for the researched molecule.
-  - **Session & Exports**: Session execution audit, one-click PDF dossier generation, and raw `AgentState` JSON download.
-- **Smart Contextual Navigation**: Global, history-aware back navigation. Exiting comparison mode (`A vs B`) gracefully returns to primary compound `A` research state rather than resetting to the root home page, with tab states fully synchronized in the browser history.
-
-### Medicine Formulation Discovery
-- **Feasible Drug Formulations**: Analyzes chemical molecules to identify what real medications, modified-release forms (XR/ER), fixed-dose combinations (FDCs), and targeted delivery formulations can be manufactured.
-- **Multi-Tiered Generation Engine**: Backed by curated benchmark pharmaceutical formulations, Google Gemini LLM formulation chemist prompts, and deterministic synthesis fallbacks.
 
 ### Performance & Security
 - **Redis Caching**: Upstash Redis caching with 24-hour TTL (`moleculeiq:report:{compound}`) for instant cache hits.
