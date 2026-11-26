@@ -23,12 +23,12 @@ async def get_current_user(
 ) -> Dict[str, Any]:
     """
     FastAPI dependency that extracts and validates custom JWT.
-    
+
     Checks in order:
       1. HttpOnly cookie named 'access_token'
       2. Authorization: Bearer <token> header
       3. Query parameter 'token' (for EventSource SSE streaming connections)
-      
+
     Returns decoded user payload or raises 401 Unauthorized exception.
     """
     token: Optional[str] = None

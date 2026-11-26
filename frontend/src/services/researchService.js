@@ -32,9 +32,6 @@ function getAuthToken() {
   return localStorage.getItem('access_token') || '';
 }
 
-/**
- * streamResearch
- */
 export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError) {
   const token = getAuthToken();
   let url = `${API_CONFIG.baseURL}/api/v1/research/stream?molecule_name=${encodeURIComponent(moleculeName)}`;
@@ -42,7 +39,6 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     url += `&token=${encodeURIComponent(token)}`;
   }
 
-  // EventSource automatically includes cookies if credentials are sent in same origin or with credentials setting
   const es = new EventSource(url, { withCredentials: true });
 
   const progressEvents = [

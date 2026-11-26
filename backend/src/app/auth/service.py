@@ -28,13 +28,9 @@ class AuthService:
         Extracts google_id (sub), email, name, and picture.
         """
         try:
-            # Construct Google request transport
             transport = google_requests.Request()
-            
-            # Verify ID token against Google's public keys
-            # If GOOGLE_CLIENT_ID is set, enforce audience check
             audience = settings.GOOGLE_CLIENT_ID if settings.GOOGLE_CLIENT_ID else None
-            
+
             payload = id_token.verify_oauth2_token(
                 credential,
                 transport,
@@ -42,9 +38,9 @@ class AuthService:
             )
 
             google_id = payload.get("sub")
-            email     = payload.get("email")
-            name      = payload.get("name") or email.split("@")[0]
-            picture   = payload.get("picture")
+            email = payload.get("email")
+            name = payload.get("name") or email.split("@")[0]
+            picture = payload.get("picture")
 
             if not google_id or not email:
                 raise ValueError("Google ID token missing sub or email claims")
@@ -78,23 +74,19 @@ class AuthService:
         5. Return unified user dict.
         """
         google_data = self.verify_google_credential(credential)
-        google_id   = google_data["google_id"]
-        email       = google_data["email"]
-        name        = google_data["name"]
-        picture     = google_data["picture"]
+        google_id = google_data["google_id"]
+        email = google_data["email"]
+        name = google_data["name"]
+        picture = google_data["picture"]
 
-        # Check existing user in Supabase PostgreSQL
         user = self.user_repo.get_by_google_id(google_id)
         if not user:
-            # Check by email if google_id didn't match (prevents duplicate email conflicts)
             user = self.user_repo.get_by_email(email)
 
         if user:
-            # Existing user — update last_login_at
             updated_user = self.user_repo.update_last_login(user["google_id"])
             return updated_user or user
         else:
-            # First time user — insert new record into Supabase PostgreSQL
             new_user = self.user_repo.create_user(
                 google_id=google_id,
                 name=name,

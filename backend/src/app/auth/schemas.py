@@ -5,7 +5,7 @@ Pydantic schemas for authentication requests, user profiles, and JWT tokens.
 """
 
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
 class GoogleAuthRequest(BaseModel):

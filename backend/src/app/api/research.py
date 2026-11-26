@@ -52,16 +52,6 @@ class ResearchRequest(BaseModel):
         return cleaned
 
 
-@router.post(
-    "/research",
-    status_code=status.HTTP_200_OK,
-    summary="Execute Multi-Agent Research Pipeline",
-    description=(
-        "Executes the full MoleculeIQ multi-agent research pipeline for a molecule. "
-        "Gathers clinical trials, literature publications, market sales, and patent landscape data, "
-        "aggregates domain context, and computes an overall commercial OpportunityScore."
-    )
-)
 class ComparisonRequest(BaseModel):
     molecule_a: str = Field(..., description="First compound name (e.g. 'Metformin').")
     molecule_b: str = Field(..., description="Second compound name (e.g. 'Semaglutide').")

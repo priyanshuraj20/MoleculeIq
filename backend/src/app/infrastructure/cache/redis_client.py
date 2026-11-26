@@ -141,6 +141,24 @@ class AsyncRedisClient:
 
         return True
 
+    async def delete(self, key: str) -> bool:
+        """
+        Deletes a key from both in-memory cache and Redis.
+        """
+        global _GLOBAL_MEMORY_CACHE, _GLOBAL_REDIS_OFFLINE
+        _GLOBAL_MEMORY_CACHE.pop(key, None)
+
+        r = self._get_redis()
+        if r:
+            try:
+                await r.delete(key)
+                return True
+            except Exception:
+                _GLOBAL_REDIS_OFFLINE = True
+                return True
+
+        return True
+
     async def close(self):
         """Closes Redis connections and pool."""
         if self._redis:

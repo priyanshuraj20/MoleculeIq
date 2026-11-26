@@ -29,10 +29,8 @@ async def login_with_google(payload: GoogleAuthRequest, response: Response):
     Authenticate user using Google OAuth ID token.
     Sets HttpOnly cookie and returns access_token with user profile object.
     """
-    # 1. Verify Google token & sync user with Supabase PostgreSQL
     user = auth_service.authenticate_google_user(payload.credential)
 
-    # 2. Create custom FastAPI JWT access token
     token_data = {
         "sub": user["google_id"],
         "user_id": str(user["id"]),
@@ -42,19 +40,16 @@ async def login_with_google(payload: GoogleAuthRequest, response: Response):
     }
     access_token = create_access_token(data=token_data)
 
-    # 3. Set HttpOnly cookie for XSS protection
-    # max_age = 7 days (604,800 seconds)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True in production HTTPS
+        secure=False,
         max_age=604800,
         path="/",
     )
 
-    # 4. Construct response user model
     user_model = UserResponse(
         id=str(user["id"]),
         google_id=user["google_id"],

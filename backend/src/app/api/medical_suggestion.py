@@ -10,8 +10,9 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 import httpx
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Depends
 from app.core.config import settings
+from app.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +255,10 @@ def generate_algorithmic_fallback(molecule: str) -> Dict[str, Any]:
 
 
 @router.get("/", summary="Get pharmaceutical drug suggestions and formulations for a molecule")
-async def get_suggestions(molecule: str = Query(..., description="Molecule name to get medicine suggestions for")):
+async def get_suggestions(
+    molecule: str = Query(..., description="Molecule name to get medicine suggestions for"),
+    current_user: dict = Depends(get_current_user),
+):
     if not molecule or not molecule.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

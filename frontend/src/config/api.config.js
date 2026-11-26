@@ -8,7 +8,7 @@
 export const API_CONFIG = {
   // Vite exposes env variables via import.meta.env
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000',
-  timeout: 5000, // 5 second default request timeout
+  timeout: 30000, // 30 second request timeout for AI & cold-start resilience
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
