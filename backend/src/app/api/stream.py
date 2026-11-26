@@ -238,65 +238,100 @@ async def generate_research_stream(molecule_name: str) -> AsyncGenerator[str, No
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         })
 
-        # Step 1: Clinical Trials Agent
+        # Launch all 5 agents in parallel with strict timeouts so total latency stays low
         yield format_sse("clinical_started", {"step": "clinical", "status": "in_progress", "message": "Searching clinical databases..."})
-        state = await _clinical_agent.execute(state)
-        trials_count = len(state.clinical_trials.trials) if state.clinical_trials else 0
-        yield format_sse("clinical_completed", {
-            "step": "clinical",
-            "status": "completed",
-            "message": f"Clinical analysis complete ({trials_count} trials mapped)",
-            "trials_found": trials_count,
-            "total_found": state.clinical_trials.total_found if state.clinical_trials else 0
-        })
-
-        # Step 2: Scientific Literature Agent
         yield format_sse("literature_started", {"step": "literature", "status": "in_progress", "message": "Collecting scientific literature..."})
-        state = await _literature_agent.execute(state)
-        pubs_count = len(state.literature.publications) if state.literature else 0
-        yield format_sse("literature_completed", {
-            "step": "literature",
-            "status": "completed",
-            "message": f"Literature analysis complete ({pubs_count} papers mapped)",
-            "papers_found": pubs_count,
-            "total_found": state.literature.total_found if state.literature else 0
-        })
-
-        # Step 3: Market Insights Agent
         yield format_sse("market_started", {"step": "market", "status": "in_progress", "message": "Analyzing market intelligence..."})
-        state = _market_agent.execute(state)
-        points_count = len(state.market.data_points) if state.market else 0
-        yield format_sse("market_completed", {
-            "step": "market",
-            "status": "completed",
-            "message": "Market analysis complete",
-            "points_found": points_count,
-            "global_size_usd_mn": state.market.global_market_size_usd_mn if state.market else None
-        })
-
-        # Step 4: Patent Landscape Agent
         yield format_sse("patent_started", {"step": "patent", "status": "in_progress", "message": "Searching patent databases..."})
-        state = _patent_agent.execute(state)
-        patents_count = len(state.patent.patents) if state.patent else 0
-        yield format_sse("patent_completed", {
-            "step": "patent",
-            "status": "completed",
-            "message": f"Patent analysis complete ({patents_count} patents mapped)",
-            "records_found": patents_count,
-            "fto_summary": state.patent.fto_summary if state.patent else "N/A"
-        })
-
-        # Step 4.5: Drug Repurposing Discovery Agent
         yield format_sse("repurposing_started", {"step": "repurposing", "status": "in_progress", "message": "Discovering drug repurposing indications..."})
-        state = await _repurposing_agent.execute(state)
-        candidates_count = len(state.repurposing.candidates) if state.repurposing else 0
-        yield format_sse("repurposing_completed", {
-            "step": "repurposing",
-            "status": "completed",
-            "message": f"Repurposing discovery complete ({candidates_count} candidate indications identified)",
-            "candidates_found": candidates_count,
-            "provenance": "real"
-        })
+
+        def _make_sub_state() -> AgentState:
+            return AgentState(molecule_name=canonical, synonyms=list(syn_result.synonyms))
+
+        async def _run_step(step_name: str, coro):
+            try:
+                res_state = await coro
+                return step_name, res_state, None
+            except Exception as exc:
+                logger.warning("[SSE Stream] Step '%s' timed out or failed: %s", step_name, exc)
+                return step_name, None, str(exc)
+
+        tasks = [
+            asyncio.create_task(_run_step("clinical", asyncio.wait_for(_clinical_agent.execute(_make_sub_state()), timeout=25.0))),
+            asyncio.create_task(_run_step("literature", asyncio.wait_for(_literature_agent.execute(_make_sub_state()), timeout=25.0))),
+            asyncio.create_task(_run_step("market", asyncio.wait_for(asyncio.to_thread(_market_agent.execute, _make_sub_state()), timeout=15.0))),
+            asyncio.create_task(_run_step("patent", asyncio.wait_for(asyncio.to_thread(_patent_agent.execute, _make_sub_state()), timeout=15.0))),
+            asyncio.create_task(_run_step("repurposing", asyncio.wait_for(_repurposing_agent.execute(_make_sub_state()), timeout=25.0))),
+        ]
+
+        pending = set(tasks)
+        while pending:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for t in done:
+                step_name, sub_res, err = t.result()
+                if err:
+                    state.warnings.append(f"{step_name} step timed out or failed: {err}")
+
+                if step_name == "clinical":
+                    if sub_res:
+                        state.clinical_trials = sub_res.clinical_trials
+                        state.errors.extend(sub_res.errors)
+                    trials_count = len(state.clinical_trials.trials) if state.clinical_trials else 0
+                    yield format_sse("clinical_completed", {
+                        "step": "clinical",
+                        "status": "completed",
+                        "message": f"Clinical analysis complete ({trials_count} trials mapped)",
+                        "trials_found": trials_count,
+                        "total_found": state.clinical_trials.total_found if state.clinical_trials else 0,
+                    })
+                elif step_name == "literature":
+                    if sub_res:
+                        state.literature = sub_res.literature
+                        state.errors.extend(sub_res.errors)
+                    pubs_count = len(state.literature.publications) if state.literature else 0
+                    yield format_sse("literature_completed", {
+                        "step": "literature",
+                        "status": "completed",
+                        "message": f"Literature analysis complete ({pubs_count} papers mapped)",
+                        "papers_found": pubs_count,
+                        "total_found": state.literature.total_found if state.literature else 0,
+                    })
+                elif step_name == "market":
+                    if sub_res:
+                        state.market = sub_res.market
+                        state.errors.extend(sub_res.errors)
+                    points_count = len(state.market.data_points) if state.market else 0
+                    yield format_sse("market_completed", {
+                        "step": "market",
+                        "status": "completed",
+                        "message": "Market analysis complete",
+                        "points_found": points_count,
+                        "global_size_usd_mn": state.market.global_market_size_usd_mn if state.market else None,
+                    })
+                elif step_name == "patent":
+                    if sub_res:
+                        state.patent = sub_res.patent
+                        state.errors.extend(sub_res.errors)
+                    patents_count = len(state.patent.patents) if state.patent else 0
+                    yield format_sse("patent_completed", {
+                        "step": "patent",
+                        "status": "completed",
+                        "message": f"Patent analysis complete ({patents_count} patents mapped)",
+                        "records_found": patents_count,
+                        "fto_summary": state.patent.fto_summary if state.patent else "N/A",
+                    })
+                elif step_name == "repurposing":
+                    if sub_res:
+                        state.repurposing = sub_res.repurposing
+                        state.warnings.extend(sub_res.warnings)
+                    candidates_count = len(state.repurposing.candidates) if state.repurposing else 0
+                    yield format_sse("repurposing_completed", {
+                        "step": "repurposing",
+                        "status": "completed",
+                        "message": f"Repurposing discovery complete ({candidates_count} candidate indications identified)",
+                        "candidates_found": candidates_count,
+                        "provenance": "real",
+                    })
 
         # Step 5: Research Aggregation Service
         context = _agg_service.build_context(state)

@@ -69,12 +69,12 @@ class Settings:
     GEMINI_MODEL: str     = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     # HTTP Client — Timeouts
-    API_CONNECT_TIMEOUT: float = float(os.getenv("API_CONNECT_TIMEOUT", "10"))
-    API_READ_TIMEOUT: float    = float(os.getenv("API_READ_TIMEOUT", "30"))
+    API_CONNECT_TIMEOUT: float = float(os.getenv("API_CONNECT_TIMEOUT", "6"))
+    API_READ_TIMEOUT: float    = float(os.getenv("API_READ_TIMEOUT", "12"))
 
     # HTTP Client — Retry
-    API_MAX_RETRIES: int       = int(os.getenv("API_MAX_RETRIES", "3"))
-    API_RETRY_WAIT_MIN: float  = float(os.getenv("API_RETRY_WAIT_MIN", "2"))
+    API_MAX_RETRIES: int       = int(os.getenv("API_MAX_RETRIES", "2"))
+    API_RETRY_WAIT_MIN: float  = float(os.getenv("API_RETRY_WAIT_MIN", "1"))
 
     # External API — Limits
     CLINICALTRIALS_PAGE_SIZE: int = int(os.getenv("CLINICALTRIALS_PAGE_SIZE", "10"))
