@@ -19,6 +19,7 @@ Responsibility:
  10. Attaches RepurposingDomain to state.repurposing.
 """
 
+import asyncio
 import json
 import logging
 import time
@@ -190,12 +191,25 @@ class RepurposingAgent:
                 )
                 return state
 
-            # 5. For each target, query associated diseases with score
+            # 5. For each target, query associated diseases in parallel (up to 10 targets)
             candidate_pool: Dict[str, Dict[str, Any]] = {}
+            target_items = list(targets.items())[:10]
+            target_results = await asyncio.gather(
+                *[
+                    asyncio.wait_for(
+                        self._ot_client.get_target_associated_diseases(tid, size=100),
+                        timeout=12.0,
+                    )
+                    for tid, _ in target_items
+                ],
+                return_exceptions=True,
+            )
 
-            # Query up to 10 targets to maintain low latency
-            for tid, tinfo in list(targets.items())[:10]:
-                assoc_rows = await self._ot_client.get_target_associated_diseases(tid, size=100)
+            for (tid, tinfo), assoc_rows in zip(target_items, target_results):
+                if isinstance(assoc_rows, Exception) or not assoc_rows:
+                    if isinstance(assoc_rows, Exception):
+                        logger.warning("[RepurposingAgent] Target %s query failed/timed out: %s", tid, assoc_rows)
+                    continue
                 for a in assoc_rows:
                     dis = a.get("disease")
                     score = float(a.get("score") or 0.0)
@@ -246,22 +260,18 @@ class RepurposingAgent:
                 len(sorted_candidates), canonical
             )
 
-            # 7. For each candidate, attach real supporting evidence
-            final_candidates: List[RepurposingCandidate] = []
-            for item in sorted_candidates:
+            # 7. For all top 5 candidates, fetch real evidence + explanations in parallel
+            async def _build_candidate(item: Dict[str, Any]) -> RepurposingCandidate:
                 evidence_items, evidence_counts = await self._fetch_real_evidence(
                     drug_name=canonical,
-                    disease_name=item["disease_name"]
+                    disease_name=item["disease_name"],
                 )
-
-                # 8. Generate short explanation strictly bounded by provided data
                 explanation = await self._generate_explanation(
                     drug_name=canonical,
                     candidate=item,
-                    evidence_counts=evidence_counts
+                    evidence_counts=evidence_counts,
                 )
-
-                candidate_obj = RepurposingCandidate(
+                return RepurposingCandidate(
                     disease_name=item["disease_name"],
                     disease_id=item["disease_id"],
                     association_score=round(item["association_score"], 4),
@@ -272,9 +282,16 @@ class RepurposingAgent:
                     evidence_counts=evidence_counts,
                     explanation=explanation,
                     explanation_ai_generated=True,
-                    provenance="real"
+                    provenance="real",
                 )
-                final_candidates.append(candidate_obj)
+
+            built_results = await asyncio.gather(
+                *[_build_candidate(item) for item in sorted_candidates],
+                return_exceptions=True,
+            )
+            final_candidates: List[RepurposingCandidate] = [
+                c for c in built_results if isinstance(c, RepurposingCandidate)
+            ]
 
             domain = RepurposingDomain(
                 molecule_name=canonical,
@@ -344,21 +361,39 @@ class RepurposingAgent:
 
     async def _fetch_real_evidence(self, drug_name: str, disease_name: str) -> tuple[List[EvidenceItem], Dict[str, int]]:
         """
-        Retrieves live clinical trials and scientific publications for (drug AND disease).
+        Retrieves live clinical trials and scientific publications for (drug AND disease) in parallel.
         Citations and counts strictly come from real API responses.
         """
         evidence_items: List[EvidenceItem] = []
-        trials_count = 0
-        pubs_count = 0
 
-        # 1. Search ClinicalTrials.gov
-        try:
+        async def _fetch_ct():
             ct_url = f"{settings.CLINICALTRIALS_BASE_URL}/studies"
             query_term = f"{drug_name} {disease_name}"
-            ct_res = await self._ct_client._get(
-                ct_url,
-                params={"query.term": query_term, "pageSize": 3, "format": "json"}
+            return await asyncio.wait_for(
+                self._ct_client._get(
+                    ct_url,
+                    params={"query.term": query_term, "pageSize": 3, "format": "json"},
+                ),
+                timeout=8.0,
             )
+
+        async def _fetch_epmc():
+            epmc_url = f"{settings.EUROPEPMC_BASE_URL}/search"
+            clean_drug = drug_name.strip().replace('"', '')
+            clean_dis = disease_name.strip().replace('"', '')
+            query = f'"{clean_drug}" AND "{clean_dis}" AND (SRC:MED OR SRC:PMC)'
+            return await asyncio.wait_for(
+                self._epmc_client._get(
+                    epmc_url,
+                    params={"query": query, "pageSize": 3, "format": "json", "resultType": "lite"},
+                ),
+                timeout=8.0,
+            )
+
+        ct_res, epmc_res = await asyncio.gather(_fetch_ct(), _fetch_epmc(), return_exceptions=True)
+
+        trials_count = 0
+        if isinstance(ct_res, dict):
             studies = ct_res.get("studies", [])
             trials_count = ct_res.get("totalCount", len(studies))
             for s in studies[:2]:
@@ -370,21 +405,13 @@ class RepurposingAgent:
                         evidence_type="clinical_trial",
                         id=nct_id,
                         title=title,
-                        url=f"https://clinicaltrials.gov/study/{nct_id}"
+                        url=f"https://clinicaltrials.gov/study/{nct_id}",
                     ))
-        except Exception as exc:
-            logger.debug("[RepurposingAgent] Clinical trials query failed for '%s + %s': %s", drug_name, disease_name, exc)
+        elif isinstance(ct_res, Exception):
+            logger.debug("[RepurposingAgent] Clinical trials query failed for '%s + %s': %s", drug_name, disease_name, ct_res)
 
-        # 2. Search Europe PMC
-        try:
-            epmc_url = f"{settings.EUROPEPMC_BASE_URL}/search"
-            clean_drug = drug_name.strip().replace('"', '')
-            clean_dis = disease_name.strip().replace('"', '')
-            query = f'"{clean_drug}" AND "{clean_dis}" AND (SRC:MED OR SRC:PMC)'
-            epmc_res = await self._epmc_client._get(
-                epmc_url,
-                params={"query": query, "pageSize": 3, "format": "json", "resultType": "lite"}
-            )
+        pubs_count = 0
+        if isinstance(epmc_res, dict):
             results = epmc_res.get("resultList", {}).get("result", [])
             pubs_count = epmc_res.get("hitCount", len(results))
             for p in results[:2]:
@@ -395,10 +422,10 @@ class RepurposingAgent:
                         evidence_type="literature",
                         id=pmid,
                         title=title,
-                        url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                        url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
                     ))
-        except Exception as exc:
-            logger.debug("[RepurposingAgent] Europe PMC query failed for '%s + %s': %s", drug_name, disease_name, exc)
+        elif isinstance(epmc_res, Exception):
+            logger.debug("[RepurposingAgent] Europe PMC query failed for '%s + %s': %s", drug_name, disease_name, epmc_res)
 
         return evidence_items, {"trials_count": trials_count, "publications_count": pubs_count}
 
