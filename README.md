@@ -29,6 +29,34 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 - **Google OAuth 2.0 & Custom JWT**: Identity verification via Google OAuth and a backend-issued JWT set in an HttpOnly cookie.
 - **Stateless Architecture**: No sensitive report data is persisted in the database; users download structured PDF or JSON exports on demand.
 
+## How MoleculeIQ Works (Drug vs. Molecule & Synonym Resolution)
+
+In pharmaceutical research, **brand medicines** (e.g., *Tylenol*, *Ozempic*, *Advil*, *Glucophage*) are commercial products built around an **active chemical molecule** (e.g., *Paracetamol*, *Semaglutide*, *Ibuprofen*, *Metformin*).
+
+Before running any research agent, MoleculeIQ's **Input Gate & Synonym Resolver** (`synonym_service.py`) handles two critical steps:
+1. **Non-Pharmaceutical Gate:** Rejects non-drug inputs such as `Water`, `Air`, `Sugar`, or `Placebo` immediately so the pipeline never wastes compute or generates fake medical reports.
+2. **Brand-to-Molecule Normalization:** Maps brand names to their canonical active molecule (e.g., `Tylenol` → `Paracetamol`, `Ozempic` → `Semaglutide`, `Glucophage` → `Metformin`) and falls back to **PubChem PUG-REST** for unknown chemical synonyms.
+
+```mermaid
+flowchart TD
+    A["Input: e.g., Tylenol / Ozempic / Water"] --> B{"Non-Pharmaceutical Gate"}
+    B -->|"Water, Air, Placebo"| C["Rejected: Not a Pharmaceutical Molecule"]
+    B -->|"Valid Drug / Brand"| D["Synonym Resolver<br/>Identifies canonical molecule e.g., Paracetamol"]
+    D --> E["Five Research Domains (Parallel SSE)"]
+    E --> F["Clinical<br/>ClinicalTrials.gov"]
+    E --> G["Literature<br/>Europe PMC"]
+    E --> H["Market<br/>Supabase / IQVIA"]
+    E --> I["Patent<br/>Patent & FTO"]
+    E --> J["Repurposing<br/>Open Targets & ChEMBL"]
+    F --> K["Aggregation & Deterministic Scoring (0-100)"]
+    G --> K
+    H --> K
+    I --> K
+    J --> K
+    K --> L["Gemini + Research Data<br/>Summarizes retrieved evidence"]
+    L --> M["Final Molecule Research Report<br/>Dashboard, PDF & JSON"]
+```
+
 ## System Architecture
 
 ```mermaid
@@ -238,7 +266,7 @@ Visit `http://localhost:5173` in your browser.
 | `POST` | `/api/research` | JWT | Executes full research pipeline for a compound |
 | `GET` | `/api/v1/research/stream` | JWT | SSE stream endpoint for real-time pipeline events |
 | `POST` | `/api/v1/research/compare` | JWT | Executes parallel research and synthesizes side-by-side comparison report |
-| `GET` | `/api/v1/medical-suggestion/` | Public | Retrieves feasible manufactured drug formulations and clinical suggestions for a target molecule |
+| `GET` | `/api/v1/medical-suggestion/` | JWT | Retrieves feasible manufactured drug formulations and clinical suggestions for a target molecule |
 | `POST` | `/api/research/json` | JWT | Generates downloadable JSON research export |
 | `GET` | `/api/research/pdf` | JWT | Synthesizes executive PDF report |
 | `GET` | `/health` | Public | Health check endpoint |
