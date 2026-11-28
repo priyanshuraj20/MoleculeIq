@@ -2,14 +2,11 @@
 orchestrator/nodes.py
 
 LangGraph node definitions for the MoleculeIQ research pipeline.
-
-Each node wraps a single Worker Agent, ensuring:
-  1. Standard node interface (accepts AgentState, returns updated AgentState).
-  2. Isolated execution logging and timing.
-  3. Exception containment — if a node encounters an unexpected error, the error
-     is appended to state.errors and execution continues to subsequent nodes.
+Each node executes a single Worker Agent on a local state copy and returns
+only the domain keys it owns so parallel fan-out nodes never conflict.
 """
 
+import asyncio
 import logging
 import time
 
@@ -22,107 +19,82 @@ from app.agents.repurposing_agent import RepurposingAgent
 
 logger = logging.getLogger(__name__)
 
-# Reusable agent instances inside node execution pool
-_clinical_agent   = ClinicalTrialsAgent()
-_literature_agent = LiteratureAgent()
-_market_agent     = MarketAgent()
-_patent_agent     = PatentAgent()
+_clinical_agent    = ClinicalTrialsAgent()
+_literature_agent  = LiteratureAgent()
+_market_agent      = MarketAgent()
+_patent_agent      = PatentAgent()
 _repurposing_agent = RepurposingAgent()
 
 
-async def clinical_node(state: AgentState) -> AgentState:
-    """
-    Node 1: Executes ClinicalTrialsAgent to gather active/completed clinical trial data.
-    """
+def _clone_input_state(state: AgentState) -> AgentState:
+    return AgentState(molecule_name=state.molecule_name, synonyms=list(state.synonyms))
+
+
+async def clinical_node(state: AgentState) -> dict:
+    """Node 1: Executes ClinicalTrialsAgent."""
     logger.info("[Node: clinical] Executing for molecule '%s'", state.molecule_name)
     start_time = time.monotonic()
     try:
-        updated_state = await _clinical_agent.execute(state)
-        elapsed = round(time.monotonic() - start_time, 2)
-        logger.info("[Node: clinical] Completed in %.2fs", elapsed)
-        return updated_state
+        res = await asyncio.wait_for(_clinical_agent.execute(_clone_input_state(state)), timeout=25.0)
+        logger.info("[Node: clinical] Completed in %.2fs", round(time.monotonic() - start_time, 2))
+        return {"clinical_trials": res.clinical_trials, "errors": res.errors, "warnings": res.warnings}
     except Exception as exc:
-        elapsed = round(time.monotonic() - start_time, 2)
-        err_msg = f"Node 'clinical' unhandled exception for '{state.molecule_name}': {str(exc)}"
-        logger.error("[Node: clinical] %s (after %.2fs)", err_msg, elapsed)
-        state.errors.append(err_msg)
-        return state
+        err_msg = f"Node 'clinical' failed for '{state.molecule_name}': {exc}"
+        logger.error("[Node: clinical] %s", err_msg)
+        return {"errors": [err_msg]}
 
 
-async def literature_node(state: AgentState) -> AgentState:
-    """
-    Node 2: Executes LiteratureAgent to gather PubMed/Europe PMC scientific publications.
-    """
+async def literature_node(state: AgentState) -> dict:
+    """Node 2: Executes LiteratureAgent."""
     logger.info("[Node: literature] Executing for molecule '%s'", state.molecule_name)
     start_time = time.monotonic()
     try:
-        updated_state = await _literature_agent.execute(state)
-        elapsed = round(time.monotonic() - start_time, 2)
-        logger.info("[Node: literature] Completed in %.2fs", elapsed)
-        return updated_state
+        res = await asyncio.wait_for(_literature_agent.execute(_clone_input_state(state)), timeout=25.0)
+        logger.info("[Node: literature] Completed in %.2fs", round(time.monotonic() - start_time, 2))
+        return {"literature": res.literature, "errors": res.errors, "warnings": res.warnings}
     except Exception as exc:
-        elapsed = round(time.monotonic() - start_time, 2)
-        err_msg = f"Node 'literature' unhandled exception for '{state.molecule_name}': {str(exc)}"
-        logger.error("[Node: literature] %s (after %.2fs)", err_msg, elapsed)
-        state.errors.append(err_msg)
-        return state
+        err_msg = f"Node 'literature' failed for '{state.molecule_name}': {exc}"
+        logger.error("[Node: literature] %s", err_msg)
+        return {"errors": [err_msg]}
 
 
-async def market_node(state: AgentState) -> AgentState:
-    """
-    Node 3: Executes MarketAgent to gather IQVIA sales and market size data.
-    """
+async def market_node(state: AgentState) -> dict:
+    """Node 3: Executes MarketAgent in worker thread."""
     logger.info("[Node: market] Executing for molecule '%s'", state.molecule_name)
     start_time = time.monotonic()
     try:
-        # MarketAgent.execute is synchronous (DB-backed); run directly
-        updated_state = _market_agent.execute(state)
-        elapsed = round(time.monotonic() - start_time, 2)
-        logger.info("[Node: market] Completed in %.2fs", elapsed)
-        return updated_state
+        res = await asyncio.wait_for(asyncio.to_thread(_market_agent.execute, _clone_input_state(state)), timeout=15.0)
+        logger.info("[Node: market] Completed in %.2fs", round(time.monotonic() - start_time, 2))
+        return {"market": res.market, "errors": res.errors, "warnings": res.warnings}
     except Exception as exc:
-        elapsed = round(time.monotonic() - start_time, 2)
-        err_msg = f"Node 'market' unhandled exception for '{state.molecule_name}': {str(exc)}"
-        logger.error("[Node: market] %s (after %.2fs)", err_msg, elapsed)
-        state.errors.append(err_msg)
-        return state
+        err_msg = f"Node 'market' failed for '{state.molecule_name}': {exc}"
+        logger.error("[Node: market] %s", err_msg)
+        return {"errors": [err_msg]}
 
 
-async def patent_node(state: AgentState) -> AgentState:
-    """
-    Node 4: Executes PatentAgent to gather patent filings and FTO status.
-    """
+async def patent_node(state: AgentState) -> dict:
+    """Node 4: Executes PatentAgent in worker thread."""
     logger.info("[Node: patent] Executing for molecule '%s'", state.molecule_name)
     start_time = time.monotonic()
     try:
-        # PatentAgent.execute is synchronous (DB-backed); run directly
-        updated_state = _patent_agent.execute(state)
-        elapsed = round(time.monotonic() - start_time, 2)
-        logger.info("[Node: patent] Completed in %.2fs", elapsed)
-        return updated_state
+        res = await asyncio.wait_for(asyncio.to_thread(_patent_agent.execute, _clone_input_state(state)), timeout=15.0)
+        logger.info("[Node: patent] Completed in %.2fs", round(time.monotonic() - start_time, 2))
+        return {"patent": res.patent, "errors": res.errors, "warnings": res.warnings}
     except Exception as exc:
-        elapsed = round(time.monotonic() - start_time, 2)
-        err_msg = f"Node 'patent' unhandled exception for '{state.molecule_name}': {str(exc)}"
-        logger.error("[Node: patent] %s (after %.2fs)", err_msg, elapsed)
-        state.errors.append(err_msg)
-        return state
+        err_msg = f"Node 'patent' failed for '{state.molecule_name}': {exc}"
+        logger.error("[Node: patent] %s", err_msg)
+        return {"errors": [err_msg]}
 
 
-async def repurposing_node(state: AgentState) -> AgentState:
-    """
-    Node 5: Executes RepurposingAgent to discover candidate new indications ranked by target association & real evidence.
-    """
+async def repurposing_node(state: AgentState) -> dict:
+    """Node 5: Executes RepurposingAgent."""
     logger.info("[Node: repurposing] Executing for molecule '%s'", state.molecule_name)
     start_time = time.monotonic()
     try:
-        updated_state = await _repurposing_agent.execute(state)
-        elapsed = round(time.monotonic() - start_time, 2)
-        logger.info("[Node: repurposing] Completed in %.2fs", elapsed)
-        return updated_state
+        res = await asyncio.wait_for(_repurposing_agent.execute(_clone_input_state(state)), timeout=25.0)
+        logger.info("[Node: repurposing] Completed in %.2fs", round(time.monotonic() - start_time, 2))
+        return {"repurposing": res.repurposing, "errors": res.errors, "warnings": res.warnings}
     except Exception as exc:
-        elapsed = round(time.monotonic() - start_time, 2)
-        err_msg = f"Node 'repurposing' unhandled exception for '{state.molecule_name}': {str(exc)}"
-        logger.error("[Node: repurposing] %s (after %.2fs)", err_msg, elapsed)
-        state.errors.append(err_msg)
-        return state
-
+        err_msg = f"Node 'repurposing' failed for '{state.molecule_name}': {exc}"
+        logger.error("[Node: repurposing] %s", err_msg)
+        return {"errors": [err_msg]}

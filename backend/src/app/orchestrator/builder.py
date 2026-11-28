@@ -3,8 +3,8 @@ orchestrator/builder.py
 
 LangGraph StateGraph builder for MoleculeIQ research pipeline.
 
-Constructs and compiles the sequential execution DAG:
-  START -> clinical_node -> literature_node -> market_node -> patent_node -> END
+Constructs and compiles a parallel fan-out execution DAG:
+  START -> [clinical_node, literature_node, market_node, patent_node, repurposing_node] -> END
 """
 
 import logging
@@ -24,45 +24,32 @@ logger = logging.getLogger(__name__)
 
 def build_research_graph():
     """
-    Constructs and compiles the LangGraph StateGraph pipeline.
-
-    Sequential Execution Flow:
-        START
-          ↓
-      clinical_node
-          ↓
-     literature_node
-          ↓
-      market_node
-          ↓
-      patent_node
-          ↓
-         END
-
-    Returns:
-        Compiled LangGraph Pregel graph executable.
+    Constructs and compiles the parallel LangGraph StateGraph pipeline.
+    All 5 domain agents fan out concurrently from START and merge into AgentState.
     """
-    logger.info("[Orchestrator] Building LangGraph StateGraph pipeline...")
+    logger.info("[Orchestrator] Building parallel LangGraph StateGraph pipeline...")
 
-    # 1. Initialize StateGraph with AgentState
     builder = StateGraph(AgentState)
 
-    # 2. Add Worker Agent nodes
-    builder.add_node("clinical_node",   clinical_node)
-    builder.add_node("literature_node", literature_node)
-    builder.add_node("market_node",     market_node)
-    builder.add_node("patent_node",     patent_node)
+    builder.add_node("clinical_node",    clinical_node)
+    builder.add_node("literature_node",  literature_node)
+    builder.add_node("market_node",      market_node)
+    builder.add_node("patent_node",      patent_node)
     builder.add_node("repurposing_node", repurposing_node)
 
-    # 3. Add sequential execution edges
-    builder.add_edge(START,             "clinical_node")
-    builder.add_edge("clinical_node",   "literature_node")
-    builder.add_edge("literature_node", "market_node")
-    builder.add_edge("market_node",     "patent_node")
-    builder.add_edge("patent_node",     "repurposing_node")
+    # Parallel fan-out from START -> all 5 domain agents -> END
+    builder.add_edge(START, "clinical_node")
+    builder.add_edge(START, "literature_node")
+    builder.add_edge(START, "market_node")
+    builder.add_edge(START, "patent_node")
+    builder.add_edge(START, "repurposing_node")
+
+    builder.add_edge("clinical_node",    END)
+    builder.add_edge("literature_node",  END)
+    builder.add_edge("market_node",      END)
+    builder.add_edge("patent_node",      END)
     builder.add_edge("repurposing_node", END)
 
-    # 4. Compile graph
     compiled_graph = builder.compile()
-    logger.info("[Orchestrator] LangGraph pipeline compiled successfully.")
+    logger.info("[Orchestrator] Parallel LangGraph pipeline compiled successfully.")
     return compiled_graph

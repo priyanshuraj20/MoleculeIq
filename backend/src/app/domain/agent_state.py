@@ -2,14 +2,13 @@
 domain/agent_state.py
 
 Shared state object passed through the MoleculeIQ multi-agent workflow.
-
-Minimal initial implementation: contains only fields required by
-currently completed sessions (molecule_name, clinical_trials, errors, warnings).
-Future fields will be added incrementally as new agents are implemented.
+Uses Annotated list reducers on errors/warnings so parallel LangGraph nodes
+can append safely without concurrent key conflicts.
 """
 
+import operator
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Annotated, Optional, List
 
 from app.domain.clinical import ClinicalDomain
 from app.domain.literature import LiteratureDomain
@@ -30,5 +29,5 @@ class AgentState:
     market:          Optional[MarketInsightsDomain] = None
     patent:          Optional[PatentLandscapeDomain] = None
     repurposing:     Optional[RepurposingDomain] = None
-    errors:          List[str] = field(default_factory=list)
-    warnings:        List[str] = field(default_factory=list)
+    errors:          Annotated[List[str], operator.add] = field(default_factory=list)
+    warnings:        Annotated[List[str], operator.add] = field(default_factory=list)

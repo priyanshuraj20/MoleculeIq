@@ -13,9 +13,9 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 ### Multi-Agent Research Pipeline
 - **Clinical Evidence Agent**: Queries ClinicalTrials.gov API v2 for study phases, recruitment status, and active trials.
 - **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers.
-- **Drug Repurposing Discovery Agent**: Discovers candidate new indications.
-- **Patent Landscape Agent**: Reviews patent filings.
-- **Market Intelligence Agent**: Estimates commercial market size.
+- **Drug Repurposing Discovery Agent**: Discovers candidate new indications via Open Targets Platform GraphQL & ChEMBL REST APIs, backed by real NCT/PMID evidence and Gemini synthesis.
+- **Patent Landscape Agent**: Queries Supabase `patents` registry and live **PubChem Patents (WIPO / USPTO)** for real patent filings and FTO assessment.
+- **Market Intelligence Agent**: Queries Supabase `iqvia_sales` and live **openFDA Drugs@FDA** for approved drug applications, sponsors, and therapeutic classes.
 
 ### Data Provenance & Honest Scoring
 - **Transparent Provenance Labels**: Every domain carries an explicit provenance tag (`real`, `simulated`, or `unavailable`).
@@ -35,7 +35,7 @@ In pharmaceutical research, **brand medicines** (e.g., *Tylenol*, *Ozempic*, *Ad
 
 Before running any research agent, MoleculeIQ's **Input Gate & Synonym Resolver** (`synonym_service.py`) handles two critical steps:
 1. **Non-Pharmaceutical Gate:** Rejects non-drug inputs such as `Water`, `Air`, `Sugar`, or `Placebo` immediately so the pipeline never wastes compute or generates fake medical reports.
-2. **Brand-to-Molecule Normalization:** Maps brand names to their canonical active molecule (e.g., `Tylenol` → `Paracetamol`, `Ozempic` → `Semaglutide`, `Glucophage` → `Metformin`) and falls back to **PubChem PUG-REST** for unknown chemical synonyms.
+2. **Brand-to-Molecule Normalization:** Strips dosage/formulation suffixes (e.g., `Dolo 650` → `Dolo`, `Metformin 500mg XR` → `Metformin`), maps brand names to their canonical active molecule (e.g., `Dolo 650` / `Tylenol` → `Paracetamol`, `Ozempic` → `Semaglutide`, `Glucophage` → `Metformin`), and falls back to **PubChem PUG-REST** and **Gemini** for unknown regional brand names.
 
 ```mermaid
 flowchart TD
@@ -94,13 +94,17 @@ flowchart LR
     B --> C["Redis Cache"]
     C --> D{"Cache Hit?"}
     D -->|Yes| E["Return Cached Context"]
-    D -->|No| F["LangGraph Workflow"]
+    D -->|No| F["Parallel LangGraph / SSE Fan-Out"]
     F --> G["1. Clinical Agent"]
-    G --> H["2. Literature Agent"]
-    H --> I["3. Market Agent"]
-    I --> J["4. Patent Agent"]
-    J --> K["5. Drug Repurposing Agent"]
-    K --> L["Aggregation Service"]
+    F --> H["2. Literature Agent"]
+    F --> I["3. Market Agent"]
+    F --> J["4. Patent Agent"]
+    F --> K["5. Drug Repurposing Agent"]
+    G --> L["Aggregation Service"]
+    H --> L
+    I --> L
+    J --> L
+    K --> L
     L --> M["Opportunity Scoring Engine"]
     M --> N["SSE Stream & JSON Payload"]
     N --> O["React Dashboard"]
@@ -147,7 +151,7 @@ sequenceDiagram
 | Authentication | Google OAuth 2.0, PyJWT, HttpOnly Cookies |
 | Database | Supabase PostgreSQL (`users` table) |
 | Caching | Upstash Redis (24h TTL, TLS) |
-| External APIs | ClinicalTrials.gov API v2, Europe PMC REST API, Open Targets Platform GraphQL, ChEMBL REST API |
+| External APIs | ClinicalTrials.gov API v2, Europe PMC REST API, Open Targets Platform GraphQL, ChEMBL REST API, openFDA Drugs@FDA, PubChem PUG-REST & Patents, Google Gemini |
 | Streaming | Server-Sent Events (SSE) |
 
 ## Project Structure

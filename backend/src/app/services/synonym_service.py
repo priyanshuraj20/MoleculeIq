@@ -11,10 +11,12 @@ Responsibilities:
 """
 
 import logging
+import re
 import urllib.parse
 from dataclasses import dataclass, field
 from typing import List, Set, Optional
 import httpx
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +61,32 @@ KNOWN_BRAND_MAPPINGS = {
     "nurofen": "Ibuprofen",
     "tylenol": "Paracetamol",
     "panadol": "Paracetamol",
+    "dolo": "Paracetamol",
+    "crocin": "Paracetamol",
+    "calpol": "Paracetamol",
     "acetaminophen": "Paracetamol",
+    "brufen": "Ibuprofen",
+    "combiflam": "Ibuprofen",
+    "glycomet": "Metformin",
+    "ecosprin": "Aspirin",
+    "augmentin": "Amoxicillin",
+    "pan": "Pantoprazole",
     "bayer": "Aspirin",
     "aspirine": "Aspirin",
     "acetylsalicylic acid": "Aspirin",
     "aricept": "Donepezil",
 }
+
+_DOSAGE_SUFFIX_RE = re.compile(
+    r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|ug|g|ml|iu|%)\b|\b(?:xr|er|sr|cr|dr|dt|mr|ds|plus|forte)\b|\b\d{2,4}\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_dosage_tokens(text: str) -> str:
+    """Removes strength/formulation suffixes like 'Dolo 650' -> 'Dolo', 'Metformin 500mg XR' -> 'Metformin'."""
+    cleaned = _DOSAGE_SUFFIX_RE.sub(" ", text)
+    return re.sub(r"\s+", " ", cleaned).strip(" -_/")
 
 # Common non-pharmaceutical substances, solvents, placebos, excipients & non-drug entities
 NON_PHARMACEUTICAL_SUBSTANCES = {
@@ -143,12 +165,13 @@ class SynonymResolver:
             return SynonymResult(query_name="", canonical_name="")
 
         cleaned = query_name.strip()
-        lower_q = cleaned.lower()
+        stripped = _strip_dosage_tokens(cleaned) or cleaned
+        lower_q = stripped.lower()
 
-        # 1. Check known brand mappings
+        # 1. Check known brand mappings (after dosage stripping, e.g. "Dolo 650" -> "dolo" -> "Paracetamol")
         if lower_q in KNOWN_BRAND_MAPPINGS:
             canonical = KNOWN_BRAND_MAPPINGS[lower_q]
-            synonyms = {cleaned.lower(), canonical.lower()}
+            synonyms = {cleaned.lower(), lower_q, canonical.lower()}
             # Add all other brand names for this canonical molecule
             for brand, gen in KNOWN_BRAND_MAPPINGS.items():
                 if gen.lower() == canonical.lower():
@@ -157,22 +180,58 @@ class SynonymResolver:
             return SynonymResult(query_name=cleaned, canonical_name=canonical, synonyms=synonyms)
 
         # 2. Check if query is generic name of known compound
-        canonical = cleaned.capitalize()
-        synonyms = {lower_q}
+        canonical = stripped.capitalize()
+        synonyms = {cleaned.lower(), lower_q}
+        matched_known = False
         for brand, gen in KNOWN_BRAND_MAPPINGS.items():
             if gen.lower() == lower_q:
                 synonyms.add(brand)
                 canonical = gen
+                matched_known = True
 
         # 3. Dynamic PubChem PUG-REST API lookup if synonyms are scarce
-        pubchem_synonyms = self._fetch_pubchem_synonyms(cleaned)
+        pubchem_synonyms = self._fetch_pubchem_synonyms(stripped)
         synonyms.update(pubchem_synonyms)
+
+        # 4. Gemini fallback for unknown regional/brand medicines (only if neither dict nor PubChem matched)
+        if not matched_known and not pubchem_synonyms:
+            gemini_molecule = self._resolve_with_gemini(cleaned)
+            if gemini_molecule:
+                canonical = gemini_molecule
+                synonyms.add(gemini_molecule.lower())
+                logger.info("SynonymResolver: Gemini resolved '%s' -> '%s'", cleaned, canonical)
 
         return SynonymResult(
             query_name=cleaned,
             canonical_name=canonical,
             synonyms=synonyms
         )
+
+    def _resolve_with_gemini(self, brand_or_query: str) -> Optional[str]:
+        """Resolves an unknown brand/medicine name to its active generic molecule using Gemini."""
+        if not settings.GEMINI_API_KEY:
+            return None
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
+            prompt = (
+                f"What is the single primary generic active pharmaceutical molecule name for '{brand_or_query}'? "
+                "Reply with ONLY the single generic molecule name (e.g. Paracetamol, Ibuprofen) or UNKNOWN if not a drug."
+            )
+            payload = {
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 20},
+            }
+            with httpx.Client(timeout=4.0) as client:
+                resp = client.post(url, json=payload)
+                if resp.status_code == 200:
+                    cands = resp.json().get("candidates", [])
+                    if cands:
+                        ans = cands[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip().strip(".\"'")
+                        if ans and ans.upper() != "UNKNOWN" and len(ans) <= 40 and "\n" not in ans:
+                            return ans.title()
+        except Exception as exc:
+            logger.debug("Gemini brand resolution skipped for '%s': %s", brand_or_query, exc)
+        return None
 
     def _fetch_pubchem_synonyms(self, compound_name: str) -> Set[str]:
         """

@@ -14,7 +14,10 @@ orchestrator.
 """
 
 import logging
+import re
+import urllib.parse
 from datetime import date
+import httpx
 from app.infrastructure.database.supabase_client import get_supabase
 from app.domain.patent import PatentRecord, PatentLandscapeDomain
 
@@ -58,12 +61,24 @@ class PatentRepository:
                 if response.data:
                     for row in response.data:
                         domain.patents.append(self._map_row(row))
+                    domain.provenance = "real"
+                    domain.source = "Supabase Patent Registry"
                     logger.info("PatentRepository: found %d records in DB for '%s'", len(domain.patents), key)
                     return domain
         except Exception as exc:
             logger.warning("PatentRepository: DB query failed for '%s'. Error: %s", molecule_name, str(exc))
 
-        # 2. Repository Fallback Dataset (if DB unconfigured or missing molecule)
+        # 2. Live PubChem Patents API (Free, no API key required)
+        live_rows = self._fetch_pubchem_patents(molecule_name)
+        if live_rows:
+            for row in live_rows:
+                domain.patents.append(self._map_row(row))
+            domain.provenance = "real"
+            domain.source = "PubChem / WIPO & USPTO Patents"
+            logger.info("PatentRepository: loaded %d live patents from PubChem for '%s'", len(domain.patents), molecule_name)
+            return domain
+
+        # 3. Repository Fallback Dataset (if DB & live APIs return nothing)
         fallback_rows = self._get_fallback_patent_rows(molecule_name, search_keys)
         for row in fallback_rows:
             domain.patents.append(self._map_row(row))
@@ -75,6 +90,57 @@ class PatentRepository:
             domain.provenance = "unavailable"
 
         return domain
+
+    def _fetch_pubchem_patents(self, molecule_name: str) -> list[dict]:
+        """Fetch real patent identifiers from PubChem PUG-View Patents heading."""
+        encoded = urllib.parse.quote(molecule_name.strip())
+        try:
+            with httpx.Client(timeout=5.0) as client:
+                cid_resp = client.get(f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{encoded}/cids/JSON")
+                if cid_resp.status_code != 200:
+                    return []
+                cids = cid_resp.json().get("IdentifierList", {}).get("CID", [])
+                if not cids:
+                    return []
+                cid = cids[0]
+                pat_resp = client.get(
+                    f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{cid}/JSON",
+                    params={"heading": "Patents"},
+                )
+                if pat_resp.status_code != 200:
+                    return []
+                patent_ids = list(dict.fromkeys(
+                    re.findall(r"\b(?:US|EP|WO|CN|JP)[A-Z0-9-]{5,15}\b", pat_resp.text)
+                ))[:8]
+                if not patent_ids:
+                    return []
+
+                jurisdiction_map = {
+                    "US": "United States (USPTO)",
+                    "EP": "Europe (EPO)",
+                    "WO": "WIPO (PCT)",
+                    "CN": "China (CNIPA)",
+                    "JP": "Japan (JPO)",
+                }
+                rows = []
+                for pid in patent_ids:
+                    jur = jurisdiction_map.get(pid[:2], "International")
+                    rows.append({
+                        "molecule_name": molecule_name.title(),
+                        "patent_number": pid,
+                        "jurisdiction": jur,
+                        "filing_date": None,
+                        "expiry_date": None,
+                        "status": "Active",
+                        "patent_type": "Registered Patent / Formulation",
+                        "assignee": "PubChem / WIPO Registry",
+                        "fto_status": "Review Filing Scope",
+                        "data_source": "PubChem Patents (WIPO / USPTO)",
+                    })
+                return rows
+        except Exception as exc:
+            logger.debug("PatentRepository: PubChem patent lookup skipped for '%s': %s", molecule_name, exc)
+            return []
 
     def _get_fallback_patent_rows(self, molecule_name: str, search_keys: list[str]) -> list[dict]:
         """Returns baseline patent landscape records for known real pharmaceutical compounds."""
