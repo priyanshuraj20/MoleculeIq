@@ -66,7 +66,7 @@ class Settings:
 
     # Gemini LLM configuration
     GEMINI_API_KEY: str   = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str     = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str     = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 
     # HTTP Client — Timeouts
     API_CONNECT_TIMEOUT: float = float(os.getenv("API_CONNECT_TIMEOUT", "6"))

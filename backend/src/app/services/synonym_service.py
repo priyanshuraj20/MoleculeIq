@@ -80,7 +80,7 @@ KNOWN_BRAND_MAPPINGS = {
 
 _DOSAGE_SUFFIX_RE = re.compile(
     r"(?:\b|(?<=[a-zA-Z]{3}))\d+(?:\.\d+)?\s*(?:mg|mcg|ug|g|ml|iu|%)\b"
-    r"|\b(?:xr|er|sr|cr|dr|dt|mr|ds|plus|forte)\b"
+    r"|(?:\b|(?<=[a-zA-Z]{4}))(?:xr|er|sr|cr|dr|dt|mr|ds|plus|forte)\b"
     r"|(?:\b|(?<=[a-zA-Z]{3}))\d{2,4}\b",
     re.IGNORECASE,
 )
@@ -192,12 +192,26 @@ class SynonymResolver:
                 canonical = gen
                 matched_known = True
 
-        # 3. Dynamic PubChem PUG-REST API lookup if synonyms are scarce
-        pubchem_synonyms = self._fetch_pubchem_synonyms(stripped)
+        # 3. Dynamic PubChem PUG-REST API lookup (also resolves canonical title for brand names like Ketorol -> Ketorolac)
+        pubchem_synonyms, pubchem_title = self._fetch_pubchem_data(stripped)
         synonyms.update(pubchem_synonyms)
+        if not matched_known and pubchem_title:
+            canonical = pubchem_title
+            synonyms.add(pubchem_title.lower())
+            matched_known = True
+            logger.info("SynonymResolver: PubChem resolved '%s' -> '%s'", cleaned, canonical)
 
-        # 4. Gemini fallback for unknown regional/brand medicines (only if neither dict nor PubChem matched)
-        if not matched_known and not pubchem_synonyms:
+        # 4. Free openFDA brand-to-generic lookup (no API key needed)
+        if not matched_known:
+            fda_generic = self._resolve_with_openfda(stripped)
+            if fda_generic:
+                canonical = fda_generic
+                synonyms.add(fda_generic.lower())
+                matched_known = True
+                logger.info("SynonymResolver: openFDA resolved '%s' -> '%s'", cleaned, canonical)
+
+        # 5. Gemini universal brand resolver (handles regional/Indian medicines like Azithral, Zerodol, etc.)
+        if not matched_known:
             gemini_molecule = self._resolve_with_gemini(cleaned)
             if gemini_molecule:
                 canonical = gemini_molecule
@@ -210,30 +224,114 @@ class SynonymResolver:
             synonyms=synonyms
         )
 
-    def _resolve_with_gemini(self, brand_or_query: str) -> Optional[str]:
-        """Resolves an unknown brand/medicine name to its active generic molecule using Gemini."""
-        if not settings.GEMINI_API_KEY:
+    def _fetch_pubchem_synonyms(self, compound_name: str) -> Set[str]:
+        """Backwards-compatible helper returning only the PubChem synonym set."""
+        syns, _ = self._fetch_pubchem_data(compound_name)
+        return syns
+
+    def _fetch_pubchem_data(self, compound_name: str) -> tuple[Set[str], Optional[str]]:
+        """
+        Fetches synonyms and canonical compound Title from PubChem PUG-REST API.
+        Fails silently and returns (empty set, None) if unreachable or non-existent.
+        """
+        syns: Set[str] = set()
+        canonical_title: Optional[str] = None
+        encoded = urllib.parse.quote(compound_name.strip())
+        syn_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{encoded}/synonyms/JSON"
+        title_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{encoded}/property/Title/JSON"
+
+        try:
+            with httpx.Client(timeout=self._timeout) as client:
+                resp = client.get(syn_url)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    raw_syns = (
+                        data.get("InformationList", {})
+                        .get("Information", [{}])[0]
+                        .get("Synonym", [])
+                    )
+                    for item in raw_syns:
+                        if isinstance(item, str) and len(item) <= 30:
+                            syns.add(item.lower())
+                            if len(syns) >= 10:
+                                break
+
+                    title_resp = client.get(title_url)
+                    if title_resp.status_code == 200:
+                        props = title_resp.json().get("PropertyTable", {}).get("Properties", [])
+                        if props and props[0].get("Title"):
+                            raw_title = props[0]["Title"].strip()
+                            # Strip common salt suffixes for cleaner clinical/literature queries
+                            base_title = re.sub(
+                                r"\s+(?:tromethamine|trometamol|hydrochloride|hcl|sodium|potassium|maleate|tartrate|mesylate|sulfate)\b",
+                                "",
+                                raw_title,
+                                flags=re.IGNORECASE,
+                            ).strip()
+                            canonical_title = (base_title or raw_title).title()
+        except Exception as exc:
+            logger.debug("PubChem lookup skipped for '%s': %s", compound_name, exc)
+
+        return syns, canonical_title
+
+    def _resolve_with_openfda(self, brand_name: str) -> Optional[str]:
+        """Resolves a brand medicine name to its FDA generic molecule via openFDA (free, no key)."""
+        clean = brand_name.strip().replace('"', '')
+        if not clean:
             return None
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
-            prompt = (
-                f"What is the single primary generic active pharmaceutical molecule name for '{brand_or_query}'? "
-                "Reply with ONLY the single generic molecule name (e.g. Paracetamol, Ibuprofen) or UNKNOWN if not a drug."
-            )
-            payload = {
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 20},
-            }
             with httpx.Client(timeout=4.0) as client:
-                resp = client.post(url, json=payload)
+                resp = client.get(
+                    "https://api.fda.gov/drug/drugsfda.json",
+                    params={"search": f'openfda.brand_name:"{clean}"', "limit": 1},
+                )
                 if resp.status_code == 200:
-                    cands = resp.json().get("candidates", [])
-                    if cands:
-                        ans = cands[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip().strip(".\"'")
-                        if ans and ans.upper() != "UNKNOWN" and len(ans) <= 40 and "\n" not in ans:
-                            return ans.title()
+                    results = resp.json().get("results", [])
+                    if results:
+                        gen_list = results[0].get("openfda", {}).get("generic_name", [])
+                        if gen_list and isinstance(gen_list, list):
+                            # Take primary molecule if single-ingredient
+                            primary = gen_list[0].split(",")[0].strip()
+                            if primary and len(primary) <= 45:
+                                return primary.title()
         except Exception as exc:
-            logger.debug("Gemini brand resolution skipped for '%s': %s", brand_or_query, exc)
+            logger.debug("openFDA brand lookup skipped for '%s': %s", brand_name, exc)
+        return None
+
+    def _resolve_with_gemini(self, brand_or_query: str) -> Optional[str]:
+        """Resolves an unknown brand/medicine name to its active generic molecule using Gemini with model fallback."""
+        if not settings.GEMINI_API_KEY:
+            logger.warning("SynonymResolver: GEMINI_API_KEY not set — skipping Gemini brand resolution for '%s'", brand_or_query)
+            return None
+        candidate_models = list(dict.fromkeys([
+            settings.GEMINI_MODEL,
+            "gemini-flash-lite-latest",
+            "gemini-3.1-flash-lite-preview",
+        ]))
+        prompt = (
+            f"What is the single primary generic active pharmaceutical molecule name for the medicine '{brand_or_query}'? "
+            "Reply with ONLY the single generic molecule name (for example: Ketorolac, Paracetamol, Azithromycin) "
+            "or UNKNOWN if it is not a medicine."
+        )
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.0, "maxOutputTokens": 25},
+        }
+        with httpx.Client(timeout=8.0) as client:
+            for model in candidate_models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
+                    resp = client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        cands = resp.json().get("candidates", [])
+                        if cands:
+                            ans = cands[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip().strip(".\"'")
+                            ans = ans.split(",")[0].strip()
+                            if ans and ans.upper() != "UNKNOWN" and len(ans) <= 45 and "\n" not in ans:
+                                return ans.title()
+                    logger.debug("Gemini model %s returned %d for '%s'", model, resp.status_code, brand_or_query)
+                except Exception as exc:
+                    logger.debug("Gemini model %s failed for '%s': %s", model, brand_or_query, exc)
         return None
 
     def _fetch_pubchem_synonyms(self, compound_name: str) -> Set[str]:
