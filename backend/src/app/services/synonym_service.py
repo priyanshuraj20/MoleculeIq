@@ -62,6 +62,7 @@ KNOWN_BRAND_MAPPINGS = {
     "tylenol": "Paracetamol",
     "panadol": "Paracetamol",
     "dolo": "Paracetamol",
+    "dolo650": "Paracetamol",
     "crocin": "Paracetamol",
     "calpol": "Paracetamol",
     "acetaminophen": "Paracetamol",
@@ -78,7 +79,9 @@ KNOWN_BRAND_MAPPINGS = {
 }
 
 _DOSAGE_SUFFIX_RE = re.compile(
-    r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|ug|g|ml|iu|%)\b|\b(?:xr|er|sr|cr|dr|dt|mr|ds|plus|forte)\b|\b\d{2,4}\b",
+    r"(?:\b|(?<=[a-zA-Z]{3}))\d+(?:\.\d+)?\s*(?:mg|mcg|ug|g|ml|iu|%)\b"
+    r"|\b(?:xr|er|sr|cr|dr|dt|mr|ds|plus|forte)\b"
+    r"|(?:\b|(?<=[a-zA-Z]{3}))\d{2,4}\b",
     re.IGNORECASE,
 )
 
