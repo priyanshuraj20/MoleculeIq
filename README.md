@@ -11,11 +11,14 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 ## Key Features
 
 ### Multi-Agent Research Pipeline
-- **Clinical Evidence Agent**: Queries ClinicalTrials.gov API v2 for study phases, recruitment status, and active trials.
-- **Scientific Literature Agent**: Analyzes PubMed / Europe PMC publication volume and highly cited research papers.
-- **Drug Repurposing Discovery Agent**: Discovers candidate new indications via Open Targets Platform GraphQL & ChEMBL REST APIs, backed by real NCT/PMID evidence and Gemini synthesis.
-- **Patent Landscape Agent**: Queries Supabase `patents` registry and live **PubChem Patents (WIPO / USPTO)** for real patent filings and FTO assessment.
-- **Market Intelligence Agent**: Queries Supabase `iqvia_sales` and live **openFDA Drugs@FDA** for approved drug applications, sponsors, and therapeutic classes.
+
+| Agent | Responsibility | Data Source | Output (`AgentState`) |
+|---|---|---|---|
+| **1. `ClinicalTrialsAgent`** | Searches and maps active/completed clinical trials & study phases | **ClinicalTrials.gov API v2** | `clinical_trials` (NCT IDs, phases, status, conditions) |
+| **2. `LiteratureAgent`** | Mines peer-reviewed scientific publications & citation volume | **Europe PMC REST API** | `literature` (PMIDs, titles, abstracts) |
+| **3. `MarketAgent`** | Evaluates market size, therapeutic class & competitor landscape | **Supabase `iqvia_sales`** → **openFDA Drugs@FDA** → Simulated fallback | `market` (market size, CAGR, competitor count) |
+| **4. `PatentAgent`** | Reviews patent filings & Freedom-to-Operate (FTO) status | **Supabase `patents`** → **PubChem Patents (WIPO / USPTO)** → Simulated fallback | `patent` (patent numbers, jurisdiction, FTO summary) |
+| **5. `RepurposingAgent`** | Discovers new candidate indications (excluding known indications via EFO/MONDO ontology) | **Open Targets GraphQL + ChEMBL** (targets/MoA), **ClinicalTrials + Europe PMC** (NCT/PMID evidence), **Gemini** (synthesis), **Redis** (cache) | `repurposing` (top 5 ranked candidates + evidence) |
 
 ### Data Provenance & Honest Scoring
 - **Transparent Provenance Labels**: Every domain carries an explicit provenance tag (`real`, `simulated`, or `unavailable`).
