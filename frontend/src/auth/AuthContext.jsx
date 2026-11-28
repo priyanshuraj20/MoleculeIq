@@ -56,18 +56,31 @@ export function AuthProvider({ children }) {
     fetchCurrentUser(token);
   }, [fetchCurrentUser, token]);
 
-  // Google Login exchange handler
+  // Google Login exchange handler (waits gracefully if backend is cold-starting)
   const loginWithGoogle = async (credential) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Receives HttpOnly cookie
-        body: JSON.stringify({ credential }),
-      });
+      const doLogin = () =>
+        fetch(`${API_BASE_URL}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ credential }),
+        });
+
+      let res;
+      try {
+        res = await doLogin();
+      } catch {
+        // Backend may be waking up from sleep — ping /health and retry once
+        await fetch(`${API_BASE_URL}/health`).catch(() => {});
+        res = await doLogin();
+      }
 
       if (!res.ok) {
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          throw new Error('Backend server is starting up. Please wait a few seconds and try again.');
+        }
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Google authentication failed.');
       }
@@ -75,7 +88,6 @@ export function AuthProvider({ children }) {
       const data = await res.json();
       const { access_token, user: userData } = data;
 
-      // Save token in state and localStorage as fallback
       if (access_token) {
         setToken(access_token);
         localStorage.setItem('access_token', access_token);
@@ -83,7 +95,9 @@ export function AuthProvider({ children }) {
       setUser(userData);
       return userData;
     } catch (err) {
-      console.error('Google Auth Error:', err);
+      if (err?.name === 'TypeError') {
+        throw new Error('Backend server is starting up. Please wait a moment and try again.');
+      }
       throw err;
     } finally {
       setIsLoading(false);

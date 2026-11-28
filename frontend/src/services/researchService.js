@@ -32,14 +32,39 @@ function getAuthToken() {
   return localStorage.getItem('access_token') || '';
 }
 
-export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError) {
-  const token = getAuthToken();
-  let url = `${API_CONFIG.baseURL}/api/v1/research/stream?molecule_name=${encodeURIComponent(moleculeName)}`;
-  if (token) {
-    url += `&token=${encodeURIComponent(token)}`;
-  }
+async function waitForBackendReady(onWakeNotice, signal, maxWaitMs = 55000) {
+  const start = Date.now();
+  let notified = false;
+  const slowTimer = setTimeout(() => {
+    notified = true;
+    onWakeNotice('Backend server is starting up (may take 30–45s)...');
+  }, 2000);
 
-  const es = new EventSource(url, { withCredentials: true });
+  try {
+    while (Date.now() - start < maxWaitMs) {
+      if (signal.aborted) return false;
+      try {
+        const res = await fetch(`${API_CONFIG.baseURL}/health`, { signal });
+        if (res.ok) return true;
+      } catch (err) {
+        if (err?.name === 'AbortError') return false;
+      }
+      if (!notified) {
+        notified = true;
+        onWakeNotice('Backend server is starting up. Please wait...');
+      }
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    return false;
+  } finally {
+    clearTimeout(slowTimer);
+  }
+}
+
+export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError) {
+  let es = null;
+  let cancelled = false;
+  const controller = new AbortController();
 
   const progressEvents = [
     'research_started',
@@ -57,40 +82,67 @@ export function streamResearch(moleculeName, onStatusUpdate, onComplete, onError
     'scoring_completed',
   ];
 
-  progressEvents.forEach((eventName) => {
-    es.addEventListener(eventName, () => {
-      const msg = SSE_STATUS_MESSAGES[eventName] ?? eventName;
-      onStatusUpdate(msg, eventName);
+  waitForBackendReady(
+    (msg) => {
+      if (!cancelled) onStatusUpdate(msg, 'research_started');
+    },
+    controller.signal
+  ).then((ready) => {
+    if (cancelled) return;
+    if (!ready) {
+      onError('Backend server is still starting up. Please wait a few seconds and retry.');
+      return;
+    }
+
+    const token = getAuthToken();
+    let url = `${API_CONFIG.baseURL}/api/v1/research/stream?molecule_name=${encodeURIComponent(moleculeName)}`;
+    if (token) {
+      url += `&token=${encodeURIComponent(token)}`;
+    }
+
+    es = new EventSource(url, { withCredentials: true });
+
+    progressEvents.forEach((eventName) => {
+      es.addEventListener(eventName, () => {
+        const msg = SSE_STATUS_MESSAGES[eventName] ?? eventName;
+        onStatusUpdate(msg, eventName);
+      });
     });
+
+    es.addEventListener('research_completed', (e) => {
+      try {
+        const researchContext = JSON.parse(e.data);
+        onStatusUpdate(SSE_STATUS_MESSAGES.research_completed, 'research_completed');
+        onComplete(researchContext);
+      } catch {
+        onError('Failed to parse research results from server.');
+      }
+      es.close();
+    });
+
+    es.addEventListener('research_failed', (e) => {
+      try {
+        const parsed = JSON.parse(e.data);
+        onError(parsed.error ?? 'Research pipeline failed. Please try again.');
+      } catch {
+        onError('Research pipeline failed. Please try again.');
+      }
+      es.close();
+    });
+
+    es.onerror = () => {
+      onError('Backend server is starting up or temporarily busy. Please wait a moment and retry.');
+      es.close();
+    };
   });
 
-  es.addEventListener('research_completed', (e) => {
-    try {
-      const researchContext = JSON.parse(e.data);
-      onStatusUpdate(SSE_STATUS_MESSAGES.research_completed, 'research_completed');
-      onComplete(researchContext);
-    } catch {
-      onError('Failed to parse research results from server.');
-    }
-    es.close();
-  });
-
-  es.addEventListener('research_failed', (e) => {
-    try {
-      const parsed = JSON.parse(e.data);
-      onError(parsed.error ?? 'Research pipeline failed. Please try again.');
-    } catch {
-      onError('Research pipeline failed. Please try again.');
-    }
-    es.close();
-  });
-
-  es.onerror = () => {
-    onError('Unable to connect to the research backend. Please ensure the server is running.');
-    es.close();
+  return {
+    close: () => {
+      cancelled = true;
+      controller.abort();
+      if (es) es.close();
+    },
   };
-
-  return es;
 }
 
 /**

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import MoleculeIQLogo from './MoleculeIQLogo';
 import { useAuth } from '../auth/useAuth';
 import GoogleLoginButton from '../auth/GoogleLoginButton';
-import { LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();

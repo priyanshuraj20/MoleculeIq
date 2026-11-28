@@ -2,7 +2,7 @@
  * Shared HTTP Client Module using Axios.
  *
  * Provides a pre-configured Axios instance with Bearer token injection
- * and automatic 401 refresh-token retry.
+ * and clean cold-start / network error normalization.
  */
 
 import axios from 'axios';
@@ -23,42 +23,15 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-let refreshPromise = null;
-
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        try {
-          if (!refreshPromise) {
-            refreshPromise = axios
-              .post(
-                `${API_CONFIG.baseURL}/api/auth/refresh`,
-                { refresh_token: refreshToken },
-                { withCredentials: true }
-              )
-              .finally(() => {
-                refreshPromise = null;
-              });
-          }
-          const { data } = await refreshPromise;
-          if (data?.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-            if (data.refresh_token) {
-              localStorage.setItem('refresh_token', data.refresh_token);
-            }
-            originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-            return apiClient(originalRequest);
-          }
-        } catch {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-        }
-      }
+  (error) => {
+    const status = error.response?.status;
+    if (!error.response || status === 502 || status === 503 || status === 504) {
+      error.friendlyMessage = 'Backend server is starting up. Please wait a moment and try again.';
+    } else {
+      error.friendlyMessage =
+        error.response?.data?.detail || error.message || 'An unexpected error occurred.';
     }
     return Promise.reject(error);
   }
