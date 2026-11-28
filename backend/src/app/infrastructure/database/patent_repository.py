@@ -18,7 +18,6 @@ import re
 import urllib.parse
 from datetime import date
 import httpx
-from app.infrastructure.database.supabase_client import get_supabase
 from app.domain.patent import PatentRecord, PatentLandscapeDomain
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ class PatentRepository:
     """
 
     def __init__(self):
-        self._db = get_supabase()
+        pass
 
     # ------------------------------------------------------------------
     # Public API
@@ -38,7 +37,8 @@ class PatentRepository:
 
     def get_by_molecule(self, molecule_name: str, synonyms: list[str] | None = None) -> PatentLandscapeDomain:
         """
-        Fetch all patent records for a molecule or its synonyms.
+        Fetch patent records from live PubChem Patents (WIPO / USPTO),
+        falling back to baseline dataset if external API is unavailable.
         """
         domain = PatentLandscapeDomain(molecule_name=molecule_name)
         search_keys = [molecule_name]
@@ -47,28 +47,7 @@ class PatentRepository:
                 if s not in search_keys:
                     search_keys.append(s)
 
-        # 1. Try Supabase lookup
-        try:
-            for key in search_keys:
-                response = (
-                    self._db
-                    .table("patents")
-                    .select("*")
-                    .ilike("molecule_name", key)
-                    .order("expiry_date", desc=True)
-                    .execute()
-                )
-                if response.data:
-                    for row in response.data:
-                        domain.patents.append(self._map_row(row))
-                    domain.provenance = "real"
-                    domain.source = "Supabase Patent Registry"
-                    logger.info("PatentRepository: found %d records in DB for '%s'", len(domain.patents), key)
-                    return domain
-        except Exception as exc:
-            logger.warning("PatentRepository: DB query failed for '%s'. Error: %s", molecule_name, str(exc))
-
-        # 2. Live PubChem Patents API (Free, no API key required)
+        # 1. Live PubChem Patents API (Free, no API key required)
         live_rows = self._fetch_pubchem_patents(molecule_name)
         if live_rows:
             for row in live_rows:
@@ -78,7 +57,7 @@ class PatentRepository:
             logger.info("PatentRepository: loaded %d live patents from PubChem for '%s'", len(domain.patents), molecule_name)
             return domain
 
-        # 3. Repository Fallback Dataset (if DB & live APIs return nothing)
+        # 2. Repository Fallback Dataset (if live API returns nothing)
         fallback_rows = self._get_fallback_patent_rows(molecule_name, search_keys)
         for row in fallback_rows:
             domain.patents.append(self._map_row(row))

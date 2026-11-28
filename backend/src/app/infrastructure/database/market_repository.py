@@ -14,9 +14,7 @@ the Supabase client or raw query results directly.
 """
 
 import logging
-import urllib.parse
 import httpx
-from app.infrastructure.database.supabase_client import get_supabase
 from app.domain.market import MarketDataPoint, MarketInsightsDomain
 
 # Module-level logger — named after the module for easy filtering in logs
@@ -33,8 +31,7 @@ class MarketRepository:
     """
 
     def __init__(self):
-        # Shared Supabase client — one per repository instance
-        self._db = get_supabase()
+        pass
 
     # ------------------------------------------------------------------
     # Public API — what the agent calls
@@ -42,7 +39,8 @@ class MarketRepository:
 
     def get_by_molecule(self, molecule_name: str, synonyms: list[str] | None = None) -> MarketInsightsDomain:
         """
-        Fetch all market data rows for a molecule name or its synonyms.
+        Fetch market & regulatory signals from live openFDA Drugs@FDA,
+        falling back to baseline dataset if external API is unavailable.
         """
         domain = MarketInsightsDomain(molecule_name=molecule_name)
         search_keys = [molecule_name]
@@ -51,28 +49,7 @@ class MarketRepository:
                 if s not in search_keys:
                     search_keys.append(s)
 
-        # 1. Try Supabase lookup
-        try:
-            for key in search_keys:
-                response = (
-                    self._db
-                    .table("iqvia_sales")
-                    .select("*")
-                    .ilike("molecule_name", key)
-                    .order("year", desc=True)
-                    .execute()
-                )
-                if response.data:
-                    for row in response.data:
-                        domain.data_points.append(self._map_row(row))
-                    domain.provenance = "real"
-                    domain.source = "Supabase IQVIA Market Database"
-                    logger.info("MarketRepository: found %d rows in DB for '%s'", len(domain.data_points), key)
-                    return domain
-        except Exception as exc:
-            logger.warning("MarketRepository: DB query failed for '%s'. Error: %s", molecule_name, str(exc))
-
-        # 2. Live openFDA Drugs@FDA API (Free, no API key required)
+        # 1. Live openFDA Drugs@FDA API (Free, no API key required)
         fallback_rows = self._get_fallback_market_rows(molecule_name, search_keys)
         fda_rows = self._fetch_openfda_market_signals(molecule_name, fallback_rows)
         if fda_rows:
@@ -83,7 +60,7 @@ class MarketRepository:
             logger.info("MarketRepository: loaded %d live openFDA rows for '%s'", len(domain.data_points), molecule_name)
             return domain
 
-        # 3. Repository Fallback Dataset (if DB & openFDA unavailable)
+        # 2. Repository Fallback Dataset (if openFDA unavailable)
         for row in fallback_rows:
             domain.data_points.append(self._map_row(row))
 

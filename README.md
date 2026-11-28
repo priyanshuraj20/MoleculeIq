@@ -16,8 +16,8 @@ Traditional pharmaceutical research requires manually searching fragmented datab
 |---|---|---|---|
 | **1. `ClinicalTrialsAgent`** | Searches and maps active/completed clinical trials & study phases | **ClinicalTrials.gov API v2** | `clinical_trials` (NCT IDs, phases, status, conditions) |
 | **2. `LiteratureAgent`** | Mines peer-reviewed scientific publications & citation volume | **Europe PMC REST API** | `literature` (PMIDs, titles, abstracts) |
-| **3. `MarketAgent`** | Evaluates market size, therapeutic class & competitor landscape | **Supabase `iqvia_sales`** → **openFDA Drugs@FDA** → Simulated fallback | `market` (market size, CAGR, competitor count) |
-| **4. `PatentAgent`** | Reviews patent filings & Freedom-to-Operate (FTO) status | **Supabase `patents`** → **PubChem Patents (WIPO / USPTO)** → Simulated fallback | `patent` (patent numbers, jurisdiction, FTO summary) |
+| **3. `MarketAgent`** | Evaluates market size, therapeutic class & competitor landscape | **openFDA Drugs@FDA** → Simulated fallback | `market` (market size, CAGR, competitor count) |
+| **4. `PatentAgent`** | Reviews patent filings & Freedom-to-Operate (FTO) status | **PubChem Patents (WIPO / USPTO)** → Simulated fallback | `patent` (patent numbers, jurisdiction, FTO summary) |
 | **5. `RepurposingAgent`** | Discovers new candidate indications (excluding known indications via EFO/MONDO ontology) | **Open Targets GraphQL + ChEMBL** (targets/MoA), **ClinicalTrials + Europe PMC** (NCT/PMID evidence), **Gemini** (synthesis), **Redis** (cache) | `repurposing` (top 5 ranked candidates + evidence) |
 
 ### Data Provenance & Honest Scoring
@@ -48,8 +48,8 @@ flowchart TD
     D --> E["Five Research Domains (Parallel SSE)"]
     E --> F["Clinical<br/>ClinicalTrials.gov"]
     E --> G["Literature<br/>Europe PMC"]
-    E --> H["Market<br/>Supabase / IQVIA"]
-    E --> I["Patent<br/>Patent & FTO"]
+    E --> H["Market<br/>openFDA Drugs@FDA"]
+    E --> I["Patent<br/>PubChem Patents"]
     E --> J["Repurposing<br/>Open Targets & ChEMBL"]
     F --> K["Aggregation & Deterministic Scoring (0-100)"]
     G --> K
