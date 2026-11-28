@@ -38,14 +38,14 @@ In pharmaceutical research, **brand medicines** (e.g., *Tylenol*, *Ozempic*, *Ad
 
 Before running any research agent, MoleculeIQ's **Input Gate & Synonym Resolver** (`synonym_service.py`) handles two critical steps:
 1. **Non-Pharmaceutical Gate:** Rejects non-drug inputs such as `Water`, `Air`, `Sugar`, or `Placebo` immediately so the pipeline never wastes compute or generates fake medical reports.
-2. **Brand-to-Molecule Normalization:** Strips dosage/formulation suffixes (e.g., `Dolo 650` → `Dolo`, `Metformin 500mg XR` → `Metformin`), maps brand names to their canonical active molecule (e.g., `Dolo 650` / `Tylenol` → `Paracetamol`, `Ozempic` → `Semaglutide`, `Glucophage` → `Metformin`), and falls back to **PubChem PUG-REST** and **Gemini** for unknown regional brand names.
+2. **Brand-to-Molecule Normalization:** Strips dosage/formulation suffixes (e.g., `Dolo650` → `Dolo`, `Ketoroldt` → `Ketorol`, `Metformin 500mg XR` → `Metformin`), maps brand names to their canonical active molecule (e.g., `Dolo 650` / `Tylenol` → `Paracetamol`, `Ozempic` → `Semaglutide`, `Glucophage` → `Metformin`), and falls back to **PubChem PUG-REST**, **openFDA**, and **Gemini** for unknown regional brand names.
 
 ```mermaid
 flowchart TD
     A["Input: e.g., Tylenol / Ozempic / Water"] --> B{"Non-Pharmaceutical Gate"}
     B -->|"Water, Air, Placebo"| C["Rejected: Not a Pharmaceutical Molecule"]
     B -->|"Valid Drug / Brand"| D["Synonym Resolver<br/>Identifies canonical molecule e.g., Paracetamol"]
-    D --> E["Five Research Domains (Parallel SSE)"]
+    D --> E["Five Research Domains (Parallel LangGraph & SSE)"]
     E --> F["Clinical<br/>ClinicalTrials.gov"]
     E --> G["Literature<br/>Europe PMC"]
     E --> H["Market<br/>openFDA Drugs@FDA"]
